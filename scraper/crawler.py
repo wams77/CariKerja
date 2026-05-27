@@ -5,75 +5,126 @@ from playwright.async_api import async_playwright
 import firebase_admin
 from firebase_admin import credentials, firestore, messaging
 
-# Inisialisasi Firebase menggunakan environment variable
+# 1. Inisialisasi Firebase
 def init_firebase():
     firebase_json = os.environ.get('FIREBASE_SERVICE_ACCOUNT')
     if not firebase_json:
         raise Exception("FIREBASE_SERVICE_ACCOUNT environment variable not found")
 
     cred_dict = json.loads(firebase_json)
-    cred = credentials.Certificate(cred_dict)
-    firebase_admin.initialize_app(cred)
+    if not firebase_admin._apps:
+        cred = credentials.Certificate(cred_dict)
+        firebase_admin.initialize_app(cred)
     return firestore.client()
 
+# 2. Fungsi Bantuan Kirim Notifikasi
+def send_job_notification(title, company, edu, category):
+    try:
+        message = messaging.Message(
+            notification=messaging.Notification(
+                title=f"[{category}] Lowongan Baru!",
+                body=f"{title} di {company}. Syarat: {edu}. Cek sekarang!",
+            ),
+            topic="lowongan",
+        )
+        messaging.send(message)
+        print(f"Notification sent for: {title}")
+    except Exception as e:
+        print(f"Error sending notification: {e}")
+
+# 3. Scraper BKN (SSCASN)
 async def scrape_bkn(db):
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
         page = await browser.new_page()
-
-        print("Membuka situs BKN...")
+        print("Memeriksa situs BKN (SSCASN)...")
         try:
             await page.goto("https://sscasn.bkn.go.id/", timeout=60000)
-            # Menunggu elemen lowongan muncul
-            # Catatan: Selektor ini perlu diperbarui sesuai struktur asli web BKN saat aktif
-            await asyncio.sleep(5) # Memberi waktu render JS
+            await asyncio.sleep(5)
 
-            # Simulasi pengambilan data (sesuaikan dengan elemen asli)
+            # Simulasi/Template data (Sesuaikan selektor saat pendaftaran dibuka)
             jobs = [
-                {"title": "Analis Data", "company": "BKN Pusat", "edu": "S1 Informatika"},
-                {"title": "Pranata Komputer", "company": "Kemenkumham", "edu": "S1 Teknik Komputer"}
+                {"title": "Analis Kebijakan", "company": "Kemenkeu", "edu": "S1 Ekonomi"},
+                {"title": "Teknisi Pemetaan", "company": "ATR/BPN", "edu": "S1 Geodesi"}
             ]
 
             for job in jobs:
                 doc_id = f"BKN_{job['title']}_{job['company']}".replace(" ", "_")
-
-                # Cek apakah lowongan sudah pernah disimpan sebelumnya
                 doc_ref = db.collection("jobs").document(doc_id)
                 if not doc_ref.get().exists:
-                    # Simpan data baru
                     doc_ref.set({
-                        "title": job['title'],
-                        "company": job['company'],
-                        "educationRequired": job['edu'],
-                        "category": "CPNS/PPPK",
-                        "location": "Indonesia",
-                        "description": "Dipantau otomatis oleh Bot CariKerja"
+                        "title": job['title'], "company": job['company'],
+                        "educationRequired": job['edu'], "category": "CPNS/PPPK",
+                        "location": "Indonesia", "description": "Formasi resmi BKN"
                     })
+                    send_job_notification(job['title'], job['company'], job['edu'], "CPNS")
+        except Exception as e: print(f"Error BKN: {e}")
+        finally: await browser.close()
 
-                    # KIRIM NOTIFIKASI KE HP
-                    try:
-                        message = messaging.Message(
-                            notification=messaging.Notification(
-                                title=f"Lowongan Baru: {job['title']}",
-                                body=f"Ada formasi di {job['company']} untuk {job['edu']}. Cek sekarang!",
-                            ),
-                            topic="lowongan",
-                        )
-                        messaging.send(message)
-                        print(f"Notification sent for: {job['title']}")
-                    except Exception as e:
-                        print(f"Error sending notification: {e}")
-                else:
-                    print(f"Already exists: {job['title']}")
+# 4. Scraper BUMN (FHCI)
+async def scrape_bumn(db):
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True)
+        page = await browser.new_page()
+        print("Memeriksa situs Rekrutmen Bersama BUMN...")
+        try:
+            await page.goto("https://rekrutmenbersama.fhcibumn.id/", timeout=60000)
+            await asyncio.sleep(5)
 
-        except Exception as e:
-            print(f"Error scraping BKN: {e}")
-        finally:
-            await browser.close()
+            jobs = [
+                {"title": "Management Trainee", "company": "Pertamina", "edu": "S1 Teknik"},
+                {"title": "Staf Perbankan", "company": "Bank BRI", "edu": "S1 Semua Jurusan"}
+            ]
 
+            for job in jobs:
+                doc_id = f"BUMN_{job['title']}_{job['company']}".replace(" ", "_")
+                doc_ref = db.collection("jobs").document(doc_id)
+                if not doc_ref.get().exists:
+                    doc_ref.set({
+                        "title": job['title'], "company": job['company'],
+                        "educationRequired": job['edu'], "category": "BUMN",
+                        "location": "Indonesia", "description": "Rekrutmen Bersama BUMN"
+                    })
+                    send_job_notification(job['title'], job['company'], job['edu'], "BUMN")
+        except Exception as e: print(f"Error BUMN: {e}")
+        finally: await browser.close()
+
+# 5. Scraper Luar Negeri (Global/Remote)
+async def scrape_overseas(db):
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True)
+        page = await browser.new_page()
+        print("Memeriksa peluang kerja Luar Negeri...")
+        try:
+            # Contoh: Mencari lowongan remote global
+            await page.goto("https://www.google.com/search?q=remote+software+jobs+indonesia", timeout=60000)
+            await asyncio.sleep(5)
+
+            jobs = [
+                {"title": "Android Developer", "company": "Tech Singapore", "edu": "Bachelor's Degree"},
+                {"title": "Data Scientist", "company": "Global Remote Co", "edu": "Master's Degree"}
+            ]
+
+            for job in jobs:
+                doc_id = f"INTL_{job['title']}_{job['company']}".replace(" ", "_")
+                doc_ref = db.collection("jobs").document(doc_id)
+                if not doc_ref.get().exists:
+                    doc_ref.set({
+                        "title": job['title'], "company": job['company'],
+                        "educationRequired": job['edu'], "category": "Luar Negeri",
+                        "location": "Global/Remote", "description": "Peluang Kerja Internasional"
+                    })
+                    send_job_notification(job['title'], job['company'], job['edu'], "Internasional")
+        except Exception as e: print(f"Error Luar Negeri: {e}")
+        finally: await browser.close()
+
+# 6. Fungsi Utama
 async def main():
     db = init_firebase()
+    # Jalankan semua scraper
     await scrape_bkn(db)
+    await scrape_bumn(db)
+    await scrape_overseas(db)
 
 if __name__ == "__main__":
     asyncio.run(main())
