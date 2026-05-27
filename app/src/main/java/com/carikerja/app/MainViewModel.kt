@@ -83,6 +83,12 @@ class MainViewModel : ViewModel() {
         _showOnlyBookmarks.value = !_showOnlyBookmarks.value
     }
 
+    fun editProfile() {
+        // Hanya menghapus data profil di tampilan agar user bisa input ulang
+        // Tanpa melakukan auth.signOut()
+        _userProfile.value = null
+    }
+
     fun logout() {
         auth.signOut()
     }

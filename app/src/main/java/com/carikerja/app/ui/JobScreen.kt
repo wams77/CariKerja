@@ -32,7 +32,7 @@ fun JobScreen(
     onFieldFilterSelected: (String) -> Unit,
     onBack: () -> Unit
 ) {
-    val fields = listOf("Semua", "Informatika", "Ekonomi", "Teknik", "Kesehatan", "Hukum")
+    val fields = listOf("Semua", "Informatika", "Ekonomi", "Teknik", "Kesehatan", "Hukum", "Sosial & Politik", "Sastra & Budaya", "Pendidikan")
 
     Column(
         modifier = Modifier

@@ -99,7 +99,7 @@ class MainActivity : ComponentActivity() {
                                     onBookmarkToggle = { viewModel.toggleBookmark(it) },
                                     onToggleFilter = { viewModel.toggleShowBookmarks() },
                                     onFieldFilterSelected = { viewModel.setFieldFilter(it) },
-                                    onBack = { viewModel.logout() }
+                                    onBack = { viewModel.editProfile() }
                                 )
                             }
                         }

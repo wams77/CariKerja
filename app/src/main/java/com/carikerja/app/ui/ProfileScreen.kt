@@ -23,7 +23,7 @@ fun ProfileScreen(onSave: (UserProfile) -> Unit) {
     var selectedField by remember { mutableStateOf("Umum") }
     var expanded by remember { mutableStateOf(false) }
     
-    val fields = listOf("Umum", "Informatika", "Ekonomi", "Teknik", "Kesehatan", "Hukum")
+    val fields = listOf("Umum", "Informatika", "Ekonomi", "Teknik", "Kesehatan", "Hukum", "Sosial & Politik", "Sastra & Budaya", "Pendidikan")
 
     Column(
         modifier = Modifier
