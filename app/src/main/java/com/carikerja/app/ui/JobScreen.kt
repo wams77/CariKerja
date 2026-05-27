@@ -2,9 +2,11 @@ package com.carikerja.app.ui
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
@@ -18,20 +20,19 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.carikerja.app.data.Job
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun JobScreen(
     jobs: List<Job>,
     bookmarkedIds: List<String>,
     showOnlyBookmarks: Boolean,
+    selectedField: String,
     onBookmarkToggle: (String) -> Unit,
     onToggleFilter: () -> Unit,
+    onFieldFilterSelected: (String) -> Unit,
     onBack: () -> Unit
 ) {
-    val filteredJobs = if (showOnlyBookmarks) {
-        jobs.filter { bookmarkedIds.contains(it.id) }
-    } else {
-        jobs
-    }
+    val fields = listOf("Semua", "Informatika", "Ekonomi", "Teknik", "Kesehatan", "Hukum")
 
     Column(
         modifier = Modifier
@@ -65,14 +66,32 @@ fun JobScreen(
         }
         
         Spacer(modifier = Modifier.height(8.dp))
+
+        // Horizontal Category Filter
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            fields.forEach { field ->
+                FilterChip(
+                    selected = selectedField == field,
+                    onClick = { onFieldFilterSelected(field) },
+                    label = { Text(field) }
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
         
-        if (filteredJobs.isEmpty()) {
+        if (jobs.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(if (showOnlyBookmarks) "Belum ada lowongan yang disimpan" else "Tidak ada lowongan ditemukan")
+                Text(if (showOnlyBookmarks) "Belum ada simpanan" else "Tidak ada lowongan ditemukan")
             }
         } else {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(filteredJobs) { job ->
+                items(jobs) { job ->
                     JobItem(
                         job = job,
                         isBookmarked = bookmarkedIds.contains(job.id),
@@ -120,6 +139,17 @@ fun JobItem(job: Job, isBookmarked: Boolean, onBookmarkClick: () -> Unit) {
                 Surface(
                     shape = MaterialTheme.shapes.small,
                     color = MaterialTheme.colorScheme.secondaryContainer
+                ) {
+                    Text(
+                        text = job.field,
+                        style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(4.dp))
+                Surface(
+                    shape = MaterialTheme.shapes.small,
+                    color = MaterialTheme.colorScheme.tertiaryContainer
                 ) {
                     Text(
                         text = job.jobType,

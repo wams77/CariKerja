@@ -21,11 +21,36 @@ import com.carikerja.app.ui.ProfileScreen
 import com.carikerja.app.ui.theme.CariKerjaTheme
 import com.google.firebase.messaging.FirebaseMessaging
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+
 class MainActivity : ComponentActivity() {
+
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            FirebaseMessaging.getInstance().subscribeToTopic("lowongan")
+        }
+    }
+
+    private fun askNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) !=
+                PackageManager.PERMISSION_GRANTED
+            ) {
+                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        // Berlangganan topik agar menerima notifikasi dari Bot
+        askNotificationPermission()
         FirebaseMessaging.getInstance().subscribeToTopic("lowongan")
 
         enableEdgeToEdge()
@@ -34,9 +59,10 @@ class MainActivity : ComponentActivity() {
                 val viewModel: MainViewModel = viewModel()
                 val currentUser by viewModel.currentUser.collectAsState()
                 val userProfile by viewModel.userProfile.collectAsState()
-                val jobs by viewModel.jobs.collectAsState()
+                val jobs by viewModel.filteredJobs.collectAsState()
                 val isLoading by viewModel.isLoading.collectAsState()
                 val showOnlyBookmarks by viewModel.showOnlyBookmarks.collectAsState()
+                val selectedFieldFilter by viewModel.selectedFieldFilter.collectAsState()
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
@@ -69,8 +95,10 @@ class MainActivity : ComponentActivity() {
                                     jobs = jobs,
                                     bookmarkedIds = userProfile?.bookmarkedJobIds ?: emptyList(),
                                     showOnlyBookmarks = showOnlyBookmarks,
+                                    selectedField = selectedFieldFilter,
                                     onBookmarkToggle = { viewModel.toggleBookmark(it) },
                                     onToggleFilter = { viewModel.toggleShowBookmarks() },
+                                    onFieldFilterSelected = { viewModel.setFieldFilter(it) },
                                     onBack = { viewModel.logout() }
                                 )
                             }

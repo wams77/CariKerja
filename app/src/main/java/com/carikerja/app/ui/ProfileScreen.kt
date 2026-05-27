@@ -4,10 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Build
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,11 +14,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.carikerja.app.data.UserProfile
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(onSave: (UserProfile) -> Unit) {
     var name by remember { mutableStateOf("") }
     var education by remember { mutableStateOf("") }
     var location by remember { mutableStateOf("Indonesia") }
+    var selectedField by remember { mutableStateOf("Umum") }
+    var expanded by remember { mutableStateOf(false) }
+    
+    val fields = listOf("Umum", "Informatika", "Ekonomi", "Teknik", "Kesehatan", "Hukum")
 
     Column(
         modifier = Modifier
@@ -40,61 +42,59 @@ fun ProfileScreen(onSave: (UserProfile) -> Unit) {
             tint = MaterialTheme.colorScheme.primary
         )
         
-        Text(
-            text = "Selamat Datang!",
-            style = MaterialTheme.typography.headlineLarge,
-            fontWeight = FontWeight.Bold
-        )
-        
-        Text(
-            text = "Lengkapi profil Anda agar kami dapat mencarikan lowongan yang paling sesuai.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-        )
+        Text(text = "Lengkapi Profil", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
 
-        Spacer(modifier = Modifier.height(16.dp))
+        ProfileTextField(value = name, onValueChange = { name = it }, label = "Nama Lengkap", icon = Icons.Default.Person, placeholder = "Nama Anda")
+        ProfileTextField(value = education, onValueChange = { education = it }, label = "Pendidikan Terakhir", icon = Icons.Default.School, placeholder = "Contoh: S1 Teknik")
+        ProfileTextField(value = location, onValueChange = { location = it }, label = "Lokasi Pilihan", icon = Icons.Default.LocationOn, placeholder = "Contoh: Jakarta / Remote")
 
-        ProfileTextField(
-            value = name,
-            onValueChange = { name = it },
-            label = "Nama Lengkap",
-            icon = Icons.Default.AccountCircle,
-            placeholder = "Masukkan nama lengkap Anda"
-        )
-
-        ProfileTextField(
-            value = education,
-            onValueChange = { education = it },
-            label = "Pendidikan Terakhir",
-            icon = Icons.Default.School,
-            placeholder = "Contoh: S1 Teknik Informatika"
-        )
-
-        ProfileTextField(
-            value = location,
-            onValueChange = { location = it },
-            label = "Lokasi Pilihan",
-            icon = Icons.Default.LocationOn,
-            placeholder = "Contoh: Jakarta atau Remote"
-        )
+        // Bidang Kategori Dropdown
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { expanded = !expanded },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            OutlinedTextField(
+                value = selectedField,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Bidang Keahlian") },
+                leadingIcon = { Icon(Icons.Default.Build, contentDescription = null) },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                modifier = Modifier.menuAnchor().fillMaxWidth(),
+                shape = MaterialTheme.shapes.medium
+            )
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                fields.forEach { field ->
+                    DropdownMenuItem(
+                        text = { Text(field) },
+                        onClick = {
+                            selectedField = field
+                            expanded = false
+                        }
+                    )
+                }
+            }
+        }
 
         Spacer(modifier = Modifier.height(24.dp))
 
         Button(
             onClick = {
-                if (name.isNotBlank() && education.isNotBlank()) {
+                if (name.isNotBlank()) {
                     onSave(UserProfile(
-                        userId = "user_" + System.currentTimeMillis(), 
+                        userId = "", // Handled by ViewModel
                         name = name, 
                         education = education,
+                        field = selectedField,
                         preferredLocation = location
                     ))
                 }
             },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
+            modifier = Modifier.fillMaxWidth().height(56.dp),
             shape = MaterialTheme.shapes.medium
         ) {
             Text("Mulai Cari Kerja", style = MaterialTheme.typography.titleMedium)
@@ -103,13 +103,7 @@ fun ProfileScreen(onSave: (UserProfile) -> Unit) {
 }
 
 @Composable
-fun ProfileTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    label: String,
-    icon: ImageVector,
-    placeholder: String
-) {
+fun ProfileTextField(value: String, onValueChange: (String) -> Unit, label: String, icon: ImageVector, placeholder: String) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
