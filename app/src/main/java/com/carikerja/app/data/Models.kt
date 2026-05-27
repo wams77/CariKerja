@@ -17,7 +17,8 @@ data class UserProfile(
     val userId: String = "",
     val name: String = "",
     val education: String = "",
-    val preferredLocation: String = "Indonesia", // Field baru
+    val preferredLocation: String = "Indonesia",
     val skills: List<String> = emptyList(),
-    val interestedCategories: List<String> = emptyList()
+    val interestedCategories: List<String> = emptyList(),
+    val bookmarkedJobIds: List<String> = emptyList() // Field baru untuk simpan bookmark
 )

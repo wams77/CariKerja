@@ -31,6 +31,7 @@ class MainActivity : ComponentActivity() {
                 val viewModel: MainViewModel = viewModel()
                 val userProfile by viewModel.userProfile.collectAsState()
                 val jobs by viewModel.jobs.collectAsState()
+                val showOnlyBookmarks by viewModel.showOnlyBookmarks.collectAsState()
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
@@ -46,7 +47,13 @@ class MainActivity : ComponentActivity() {
                         if (userProfile == null) {
                             ProfileScreen(onSave = { viewModel.saveProfile(it) })
                         } else {
-                            JobScreen(jobs = jobs)
+                            JobScreen(
+                                jobs = jobs,
+                                bookmarkedIds = userProfile?.bookmarkedJobIds ?: emptyList(),
+                                showOnlyBookmarks = showOnlyBookmarks,
+                                onBookmarkToggle = { viewModel.toggleBookmark(it) },
+                                onToggleFilter = { viewModel.toggleShowBookmarks() }
+                            )
                         }
                     }
                 }

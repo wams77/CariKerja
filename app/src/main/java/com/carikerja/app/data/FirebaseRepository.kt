@@ -24,4 +24,17 @@ class FirebaseRepository {
             .await()
             .toObjects(Job::class.java)
     }
+
+    suspend fun toggleBookmark(userId: String, jobId: String) {
+        val userRef = db.collection("users").document(userId)
+        val user = userRef.get().await().toObject(UserProfile::class.java) ?: return
+        
+        val newBookmarks = if (user.bookmarkedJobIds.contains(jobId)) {
+            user.bookmarkedJobIds.filter { it != jobId }
+        } else {
+            user.bookmarkedJobIds + jobId
+        }
+        
+        userRef.update("bookmarkedJobIds", newBookmarks).await()
+    }
 }

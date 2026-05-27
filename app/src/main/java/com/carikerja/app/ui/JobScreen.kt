@@ -5,33 +5,82 @@ import android.net.Uri
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.carikerja.app.data.Job
 
 @Composable
-fun JobScreen(jobs: List<Job>) {
+fun JobScreen(
+    jobs: List<Job>,
+    bookmarkedIds: List<String>,
+    showOnlyBookmarks: Boolean,
+    onBookmarkToggle: (String) -> Unit,
+    onToggleFilter: () -> Unit
+) {
+    val filteredJobs = if (showOnlyBookmarks) {
+        jobs.filter { bookmarkedIds.contains(it.id) }
+    } else {
+        jobs
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Text("Lowongan Tersedia", style = MaterialTheme.typography.headlineMedium)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = if (showOnlyBookmarks) "Simpanan Saya" else "Lowongan Tersedia",
+                style = MaterialTheme.typography.headlineMedium
+            )
+            FilterChip(
+                selected = showOnlyBookmarks,
+                onClick = onToggleFilter,
+                label = { Text("Bookmark") },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Favorite,
+                        contentDescription = null,
+                        modifier = Modifier.size(FilterChipDefaults.IconSize)
+                    )
+                }
+            )
+        }
+        
         Spacer(modifier = Modifier.height(8.dp))
         
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(jobs) { job ->
-                JobItem(job)
+        if (filteredJobs.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text(if (showOnlyBookmarks) "Belum ada lowongan yang disimpan" else "Tidak ada lowongan ditemukan")
+            }
+        } else {
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(filteredJobs) { job ->
+                    JobItem(
+                        job = job,
+                        isBookmarked = bookmarkedIds.contains(job.id),
+                        onBookmarkClick = { onBookmarkToggle(job.id) }
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-fun JobItem(job: Job) {
+fun JobItem(job: Job, isBookmarked: Boolean, onBookmarkClick: () -> Unit) {
     val context = LocalContext.current
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -47,6 +96,22 @@ fun JobItem(job: Job) {
                     style = MaterialTheme.typography.titleLarge, 
                     modifier = Modifier.weight(1f)
                 )
+                IconButton(onClick = onBookmarkClick) {
+                    Icon(
+                        imageVector = if (isBookmarked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        contentDescription = "Bookmark",
+                        tint = if (isBookmarked) Color.Red else Color.Gray
+                    )
+                }
+            }
+            
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = job.company, 
+                    style = MaterialTheme.typography.bodyMedium, 
+                    color = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier.weight(1f)
+                )
                 Surface(
                     shape = MaterialTheme.shapes.small,
                     color = MaterialTheme.colorScheme.secondaryContainer
@@ -58,12 +123,6 @@ fun JobItem(job: Job) {
                     )
                 }
             }
-            
-            Text(
-                text = job.company, 
-                style = MaterialTheme.typography.bodyMedium, 
-                color = MaterialTheme.colorScheme.secondary
-            )
             
             Spacer(modifier = Modifier.height(8.dp))
             
