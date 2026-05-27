@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "613688799331",
+    "project_id": "carikerja-app",
+    "storage_bucket": "carikerja-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:613688799331:android:8156012a77ccddc7824856",
+        "android_client_info": {
+          "package_name": "com.carikerja.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDXZlEjW0vCRY_1dtuejZY8kEM--jlQVfA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
