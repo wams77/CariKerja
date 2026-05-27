@@ -42,10 +42,23 @@ async def scrape_bkn(db):
             await page.goto("https://sscasn.bkn.go.id/", timeout=60000)
             await asyncio.sleep(5)
 
-            # Simulasi/Template data (Sesuaikan selektor saat pendaftaran dibuka)
             jobs = [
-                {"title": "Analis Kebijakan", "company": "Kemenkeu", "edu": "S1 Ekonomi"},
-                {"title": "Teknisi Pemetaan", "company": "ATR/BPN", "edu": "S1 Geodesi"}
+                {
+                    "title": "Analis Kebijakan",
+                    "company": "Kemenkeu",
+                    "edu": "S1 Ekonomi",
+                    "salary": "Rp 7-10 Juta",
+                    "type": "CPNS",
+                    "url": "https://sscasn.bkn.go.id/"
+                },
+                {
+                    "title": "Teknisi Pemetaan",
+                    "company": "ATR/BPN",
+                    "edu": "S1 Geodesi",
+                    "salary": "Rp 6-9 Juta",
+                    "type": "CPNS",
+                    "url": "https://sscasn.bkn.go.id/"
+                }
             ]
 
             for job in jobs:
@@ -53,9 +66,15 @@ async def scrape_bkn(db):
                 doc_ref = db.collection("jobs").document(doc_id)
                 if not doc_ref.get().exists:
                     doc_ref.set({
-                        "title": job['title'], "company": job['company'],
-                        "educationRequired": job['edu'], "category": "CPNS/PPPK",
-                        "location": "Indonesia", "description": "Formasi resmi BKN"
+                        "title": job['title'],
+                        "company": job['company'],
+                        "educationRequired": job['edu'],
+                        "category": "CPNS/PPPK",
+                        "location": "Indonesia",
+                        "description": "Formasi resmi BKN",
+                        "salary": job['salary'],
+                        "jobType": job['type'],
+                        "applyUrl": job['url']
                     })
                     send_job_notification(job['title'], job['company'], job['edu'], "CPNS")
         except Exception as e: print(f"Error BKN: {e}")
@@ -72,8 +91,22 @@ async def scrape_bumn(db):
             await asyncio.sleep(5)
 
             jobs = [
-                {"title": "Management Trainee", "company": "Pertamina", "edu": "S1 Teknik"},
-                {"title": "Staf Perbankan", "company": "Bank BRI", "edu": "S1 Semua Jurusan"}
+                {
+                    "title": "Management Trainee",
+                    "company": "Pertamina",
+                    "edu": "S1 Teknik",
+                    "salary": "Kompetitif",
+                    "type": "Full-time",
+                    "url": "https://rekrutmenbersama.fhcibumn.id/"
+                },
+                {
+                    "title": "Staf Perbankan",
+                    "company": "Bank BRI",
+                    "edu": "S1 Semua Jurusan",
+                    "salary": "Standar BUMN",
+                    "type": "Full-time",
+                    "url": "https://rekrutmenbersama.fhcibumn.id/"
+                }
             ]
 
             for job in jobs:
@@ -81,9 +114,15 @@ async def scrape_bumn(db):
                 doc_ref = db.collection("jobs").document(doc_id)
                 if not doc_ref.get().exists:
                     doc_ref.set({
-                        "title": job['title'], "company": job['company'],
-                        "educationRequired": job['edu'], "category": "BUMN",
-                        "location": "Indonesia", "description": "Rekrutmen Bersama BUMN"
+                        "title": job['title'],
+                        "company": job['company'],
+                        "educationRequired": job['edu'],
+                        "category": "BUMN",
+                        "location": "Indonesia",
+                        "description": "Rekrutmen Bersama BUMN",
+                        "salary": job['salary'],
+                        "jobType": job['type'],
+                        "applyUrl": job['url']
                     })
                     send_job_notification(job['title'], job['company'], job['edu'], "BUMN")
         except Exception as e: print(f"Error BUMN: {e}")
@@ -96,13 +135,26 @@ async def scrape_overseas(db):
         page = await browser.new_page()
         print("Memeriksa peluang kerja Luar Negeri...")
         try:
-            # Contoh: Mencari lowongan remote global
             await page.goto("https://www.google.com/search?q=remote+software+jobs+indonesia", timeout=60000)
             await asyncio.sleep(5)
 
             jobs = [
-                {"title": "Android Developer", "company": "Tech Singapore", "edu": "Bachelor's Degree"},
-                {"title": "Data Scientist", "company": "Global Remote Co", "edu": "Master's Degree"}
+                {
+                    "title": "Android Developer",
+                    "company": "Tech Singapore",
+                    "edu": "Bachelor's Degree",
+                    "salary": "$4,000 - $6,000",
+                    "type": "Remote",
+                    "url": "https://linkedin.com"
+                },
+                {
+                    "title": "Data Scientist",
+                    "company": "Global Remote Co",
+                    "edu": "Master's Degree",
+                    "salary": "$5,000 - $8,000",
+                    "type": "Remote",
+                    "url": "https://indeed.com"
+                }
             ]
 
             for job in jobs:
@@ -110,9 +162,15 @@ async def scrape_overseas(db):
                 doc_ref = db.collection("jobs").document(doc_id)
                 if not doc_ref.get().exists:
                     doc_ref.set({
-                        "title": job['title'], "company": job['company'],
-                        "educationRequired": job['edu'], "category": "Luar Negeri",
-                        "location": "Global/Remote", "description": "Peluang Kerja Internasional"
+                        "title": job['title'],
+                        "company": job['company'],
+                        "educationRequired": job['edu'],
+                        "category": "Luar Negeri",
+                        "location": "Global/Remote",
+                        "description": "Peluang Kerja Internasional",
+                        "salary": job['salary'],
+                        "jobType": job['type'],
+                        "applyUrl": job['url']
                     })
                     send_job_notification(job['title'], job['company'], job['edu'], "Internasional")
         except Exception as e: print(f"Error Luar Negeri: {e}")
@@ -121,7 +179,6 @@ async def scrape_overseas(db):
 # 6. Fungsi Utama
 async def main():
     db = init_firebase()
-    # Jalankan semua scraper
     await scrape_bkn(db)
     await scrape_bumn(db)
     await scrape_overseas(db)

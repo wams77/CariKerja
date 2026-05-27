@@ -7,13 +7,17 @@ data class Job(
     val location: String = "",
     val category: String = "", // BUMN, BKN, Swasta, Luar Negeri
     val educationRequired: String = "",
-    val description: String = ""
+    val description: String = "",
+    val salary: String = "Tersedia", // Field baru
+    val jobType: String = "Full-time", // Field baru (Full-time, Remote, dsb)
+    val applyUrl: String = "" // Field baru untuk link pendaftaran
 )
 
 data class UserProfile(
     val userId: String = "",
     val name: String = "",
-    val education: String = "", // e.g., "S1 Teknik Informatika"
+    val education: String = "",
+    val preferredLocation: String = "Indonesia", // Field baru
     val skills: List<String> = emptyList(),
     val interestedCategories: List<String> = emptyList()
 )
