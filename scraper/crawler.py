@@ -32,7 +32,7 @@ def send_job_notification(title, company, edu, category):
     except Exception as e:
         print(f"Error sending notification: {e}")
 
-# 3. Scraper BKN (SSCASN)
+# 3. Scraper BKN (SSCASN) - Simulasi Aktif
 async def scrape_bkn(db):
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
@@ -42,22 +42,12 @@ async def scrape_bkn(db):
             await page.goto("https://sscasn.bkn.go.id/", timeout=60000)
             await asyncio.sleep(5)
 
+            # Catatan: Saat portal tutup, data di bawah adalah simulasi.
+            # Saat buka, ganti dengan logic: await page.query_selector_all(".card-job")
             jobs = [
                 {
-                    "title": "Analis Kebijakan",
-                    "company": "Kemenkeu",
-                    "edu": "S1 Ekonomi",
-                    "salary": "Rp 7-10 Juta",
-                    "type": "CPNS",
-                    "url": "https://sscasn.bkn.go.id/"
-                },
-                {
-                    "title": "Teknisi Pemetaan",
-                    "company": "ATR/BPN",
-                    "edu": "S1 Geodesi",
-                    "salary": "Rp 6-9 Juta",
-                    "type": "CPNS",
-                    "url": "https://sscasn.bkn.go.id/"
+                    "title": "Analis Kebijakan", "company": "Kemenkeu", "edu": "S1 Ekonomi",
+                    "salary": "Rp 7-10 Juta", "type": "CPNS", "url": "https://sscasn.bkn.go.id/"
                 }
             ]
 
@@ -66,21 +56,16 @@ async def scrape_bkn(db):
                 doc_ref = db.collection("jobs").document(doc_id)
                 if not doc_ref.get().exists:
                     doc_ref.set({
-                        "title": job['title'],
-                        "company": job['company'],
-                        "educationRequired": job['edu'],
-                        "category": "CPNS/PPPK",
-                        "location": "Indonesia",
-                        "description": "Formasi resmi BKN",
-                        "salary": job['salary'],
-                        "jobType": job['type'],
-                        "applyUrl": job['url']
+                        "title": job['title'], "company": job['company'],
+                        "educationRequired": job['edu'], "category": "CPNS/PPPK",
+                        "location": "Indonesia", "description": "Formasi resmi BKN",
+                        "salary": job['salary'], "jobType": job['type'], "applyUrl": job['url']
                     })
                     send_job_notification(job['title'], job['company'], job['edu'], "CPNS")
         except Exception as e: print(f"Error BKN: {e}")
         finally: await browser.close()
 
-# 4. Scraper BUMN (FHCI)
+# 4. Scraper BUMN (FHCI) - Simulasi Aktif
 async def scrape_bumn(db):
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
@@ -92,20 +77,8 @@ async def scrape_bumn(db):
 
             jobs = [
                 {
-                    "title": "Management Trainee",
-                    "company": "Pertamina",
-                    "edu": "S1 Teknik",
-                    "salary": "Kompetitif",
-                    "type": "Full-time",
-                    "url": "https://rekrutmenbersama.fhcibumn.id/"
-                },
-                {
-                    "title": "Staf Perbankan",
-                    "company": "Bank BRI",
-                    "edu": "S1 Semua Jurusan",
-                    "salary": "Standar BUMN",
-                    "type": "Full-time",
-                    "url": "https://rekrutmenbersama.fhcibumn.id/"
+                    "title": "Management Trainee", "company": "Pertamina", "edu": "S1 Teknik",
+                    "salary": "Kompetitif", "type": "Full-time", "url": "https://rekrutmenbersama.fhcibumn.id/"
                 }
             ]
 
@@ -114,67 +87,68 @@ async def scrape_bumn(db):
                 doc_ref = db.collection("jobs").document(doc_id)
                 if not doc_ref.get().exists:
                     doc_ref.set({
-                        "title": job['title'],
-                        "company": job['company'],
-                        "educationRequired": job['edu'],
-                        "category": "BUMN",
-                        "location": "Indonesia",
-                        "description": "Rekrutmen Bersama BUMN",
-                        "salary": job['salary'],
-                        "jobType": job['type'],
-                        "applyUrl": job['url']
+                        "title": job['title'], "company": job['company'],
+                        "educationRequired": job['edu'], "category": "BUMN",
+                        "location": "Indonesia", "description": "Rekrutmen Bersama BUMN",
+                        "salary": job['salary'], "jobType": job['type'], "applyUrl": job['url']
                     })
                     send_job_notification(job['title'], job['company'], job['edu'], "BUMN")
         except Exception as e: print(f"Error BUMN: {e}")
         finally: await browser.close()
 
-# 5. Scraper Luar Negeri (Global/Remote)
+# 5. Scraper Luar Negeri NYATA (We Work Remotely)
 async def scrape_overseas(db):
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
         page = await browser.new_page()
-        print("Memeriksa peluang kerja Luar Negeri...")
+        print("Memeriksa peluang kerja Luar Negeri di We Work Remotely...")
         try:
-            await page.goto("https://www.google.com/search?q=remote+software+jobs+indonesia", timeout=60000)
-            await asyncio.sleep(5)
+            # Mengambil kategori 'Software Development' di We Work Remotely
+            await page.goto("https://weworkremotely.com/categories/remote-software-development-jobs", timeout=60000)
 
-            jobs = [
-                {
-                    "title": "Android Developer",
-                    "company": "Tech Singapore",
-                    "edu": "Bachelor's Degree",
-                    "salary": "$4,000 - $6,000",
-                    "type": "Remote",
-                    "url": "https://linkedin.com"
-                },
-                {
-                    "title": "Data Scientist",
-                    "company": "Global Remote Co",
-                    "edu": "Master's Degree",
-                    "salary": "$5,000 - $8,000",
-                    "type": "Remote",
-                    "url": "https://indeed.com"
-                }
-            ]
+            # Mengambil daftar lowongan
+            job_elements = await page.query_selector_all("section.jobs article ul li")
 
-            for job in jobs:
-                doc_id = f"INTL_{job['title']}_{job['company']}".replace(" ", "_")
-                doc_ref = db.collection("jobs").document(doc_id)
-                if not doc_ref.get().exists:
-                    doc_ref.set({
-                        "title": job['title'],
-                        "company": job['company'],
-                        "educationRequired": job['edu'],
-                        "category": "Luar Negeri",
-                        "location": "Global/Remote",
-                        "description": "Peluang Kerja Internasional",
-                        "salary": job['salary'],
-                        "jobType": job['type'],
-                        "applyUrl": job['url']
-                    })
-                    send_job_notification(job['title'], job['company'], job['edu'], "Internasional")
-        except Exception as e: print(f"Error Luar Negeri: {e}")
-        finally: await browser.close()
+            # Batasi ambil 5 lowongan terbaru agar tidak overload
+            for element in job_elements[:5]:
+                try:
+                    title_elem = await element.query_selector("span.title")
+                    company_elem = await element.query_selector("span.company")
+                    region_elem = await element.query_selector("span.region")
+                    link_elem = await element.query_selector("a")
+
+                    if not title_elem or not company_elem: continue
+
+                    title = await title_elem.inner_text()
+                    company = await company_elem.inner_text()
+                    region = await region_elem.inner_text() if region_elem else "Global"
+                    # Mengambil link absolut
+                    relative_url = await link_elem.get_attribute("href")
+                    apply_url = f"https://weworkremotely.com{relative_url}"
+
+                    doc_id = f"WWR_{title}_{company}".replace(" ", "_").replace("/", "_")
+                    doc_ref = db.collection("jobs").document(doc_id)
+
+                    if not doc_ref.get().exists:
+                        doc_ref.set({
+                            "title": title.strip(),
+                            "company": company.strip(),
+                            "educationRequired": "Bachelor's Degree (Equivalent)", # Standar Luar Negeri
+                            "category": "Luar Negeri",
+                            "location": region.strip(),
+                            "description": f"Remote Job from We Work Remotely",
+                            "salary": "Dollar (USD)", # WWR biasanya gaji kompetitif USD
+                            "jobType": "Remote",
+                            "applyUrl": apply_url
+                        })
+                        send_job_notification(title.strip(), company.strip(), "S1/Global", "Internasional")
+                except Exception as inner_e:
+                    print(f"Error parsing job: {inner_e}")
+
+        except Exception as e:
+            print(f"Error Luar Negeri: {e}")
+        finally:
+            await browser.close()
 
 # 6. Fungsi Utama
 async def main():
