@@ -76,13 +76,13 @@ class MainActivity : ComponentActivity() {
                 ) { innerPadding ->
                     Box(modifier = Modifier.padding(innerPadding)) {
                         when {
+                            currentUser == null -> {
+                                LoginScreen()
+                            }
                             isLoading -> {
                                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                     CircularProgressIndicator()
                                 }
-                            }
-                            currentUser == null -> {
-                                LoginScreen()
                             }
                             userProfile == null -> {
                                 ProfileScreen(onSave = { 

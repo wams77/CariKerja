@@ -53,11 +53,15 @@ class MainViewModel : ViewModel() {
 
     init {
         auth.addAuthStateListener { firebaseAuth ->
-            _currentUser.value = firebaseAuth.currentUser
-            if (firebaseAuth.currentUser != null) {
-                fetchUserProfile(firebaseAuth.currentUser!!.uid)
+            val user = firebaseAuth.currentUser
+            _currentUser.value = user
+            if (user != null) {
+                // Langsung set loading true sebelum fetch dimulai
+                _isLoading.value = true
+                fetchUserProfile(user.uid)
             } else {
                 _userProfile.value = null
+                _isLoading.value = false
             }
         }
     }
