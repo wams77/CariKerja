@@ -29,7 +29,8 @@ class ScraperService {
                     company = company,
                     educationRequired = education,
                     category = "Web Scraping",
-                    location = "Remote/Indonesia"
+                    location = "Remote/Indonesia",
+                    applyUrl = url // Menggunakan URL situs sebagai link pendaftaran default
                 ))
             }
         } catch (e: Exception) {
