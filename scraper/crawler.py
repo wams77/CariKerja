@@ -3,7 +3,7 @@ import os
 import json
 from playwright.async_api import async_playwright
 import firebase_admin
-from firebase_admin import credentials, firestore
+from firebase_admin import credentials, firestore, messaging
 
 # Inisialisasi Firebase menggunakan environment variable
 def init_firebase():
@@ -36,15 +36,35 @@ async def scrape_bkn(db):
 
             for job in jobs:
                 doc_id = f"BKN_{job['title']}_{job['company']}".replace(" ", "_")
-                db.collection("jobs").document(doc_id).set({
-                    "title": job['title'],
-                    "company": job['company'],
-                    "educationRequired": job['edu'],
-                    "category": "CPNS/PPPK",
-                    "location": "Indonesia",
-                    "description": "Dipantau otomatis oleh Bot CariKerja"
-                })
-                print(f"Saved: {job['title']}")
+
+                # Cek apakah lowongan sudah pernah disimpan sebelumnya
+                doc_ref = db.collection("jobs").document(doc_id)
+                if not doc_ref.get().exists:
+                    # Simpan data baru
+                    doc_ref.set({
+                        "title": job['title'],
+                        "company": job['company'],
+                        "educationRequired": job['edu'],
+                        "category": "CPNS/PPPK",
+                        "location": "Indonesia",
+                        "description": "Dipantau otomatis oleh Bot CariKerja"
+                    })
+
+                    # KIRIM NOTIFIKASI KE HP
+                    try:
+                        message = messaging.Message(
+                            notification=messaging.Notification(
+                                title=f"Lowongan Baru: {job['title']}",
+                                body=f"Ada formasi di {job['company']} untuk {job['edu']}. Cek sekarang!",
+                            ),
+                            topic="lowongan",
+                        )
+                        messaging.send(message)
+                        print(f"Notification sent for: {job['title']}")
+                    except Exception as e:
+                        print(f"Error sending notification: {e}")
+                else:
+                    print(f"Already exists: {job['title']}")
 
         except Exception as e:
             print(f"Error scraping BKN: {e}")

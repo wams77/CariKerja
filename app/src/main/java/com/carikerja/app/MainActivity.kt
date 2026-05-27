@@ -16,9 +16,15 @@ import com.carikerja.app.ui.JobScreen
 import com.carikerja.app.ui.ProfileScreen
 import com.carikerja.app.ui.theme.CariKerjaTheme
 
+import com.google.firebase.messaging.FirebaseMessaging
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Berlangganan topik agar menerima notifikasi dari Bot
+        FirebaseMessaging.getInstance().subscribeToTopic("lowongan")
+
         enableEdgeToEdge()
         setContent {
             CariKerjaTheme {
