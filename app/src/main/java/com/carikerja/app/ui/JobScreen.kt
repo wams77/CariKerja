@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.*
@@ -23,7 +24,8 @@ fun JobScreen(
     bookmarkedIds: List<String>,
     showOnlyBookmarks: Boolean,
     onBookmarkToggle: (String) -> Unit,
-    onToggleFilter: () -> Unit
+    onToggleFilter: () -> Unit,
+    onBack: () -> Unit
 ) {
     val filteredJobs = if (showOnlyBookmarks) {
         jobs.filter { bookmarkedIds.contains(it.id) }
@@ -38,12 +40,15 @@ fun JobScreen(
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            IconButton(onClick = onBack) {
+                Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali")
+            }
             Text(
-                text = if (showOnlyBookmarks) "Simpanan Saya" else "Lowongan Tersedia",
-                style = MaterialTheme.typography.headlineMedium
+                text = if (showOnlyBookmarks) "Simpanan" else "Lowongan",
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.weight(1f)
             )
             FilterChip(
                 selected = showOnlyBookmarks,

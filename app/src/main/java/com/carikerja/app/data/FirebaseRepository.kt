@@ -10,12 +10,18 @@ class FirebaseRepository {
         db.collection("users").document(profile.userId).set(profile).await()
     }
 
+    suspend fun getUserProfile(userId: String): UserProfile? {
+        return db.collection("users").document(userId).get().await().toObject(UserProfile::class.java)
+    }
+
     suspend fun getMatchingJobs(education: String): List<Job> {
-        return db.collection("jobs")
-            .whereEqualTo("educationRequired", education)
-            .get()
-            .await()
-            .toObjects(Job::class.java)
+        val allJobs = getAllJobs()
+        // Filter cerdas: Ambil yang cocok dengan jurusan ATAU yang untuk semua jurusan
+        return allJobs.filter { 
+            it.educationRequired.contains(education, ignoreCase = true) || 
+            it.educationRequired.contains("Semua Jurusan", ignoreCase = true) ||
+            it.educationRequired == "Semua Jenjang"
+        }
     }
 
     suspend fun getAllJobs(): List<Job> {

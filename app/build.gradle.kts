@@ -60,6 +60,8 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.messaging)
+    implementation(libs.firebase.auth)
+    implementation(libs.play.services.auth)
     implementation(libs.jsoup)
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))

@@ -12,7 +12,20 @@
           "package_name": "com.carikerja.app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "613688799331-ieqig8bmq7ab6b0dv0s9qfjs26upmibi.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.carikerja.app",
+            "certificate_hash": "261c389e72553ca3a682358d145dcbf7cc314e63"
+          }
+        },
+        {
+          "client_id": "613688799331-aatn15gj0pa807ih3gmu1hi8lcu07t2u.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDXZlEjW0vCRY_1dtuejZY8kEM--jlQVfA"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "613688799331-aatn15gj0pa807ih3gmu1hi8lcu07t2u.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
