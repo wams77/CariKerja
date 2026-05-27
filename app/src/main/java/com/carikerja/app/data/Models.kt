@@ -22,5 +22,6 @@ data class UserProfile(
     val preferredLocation: String = "Indonesia",
     val skills: List<String> = emptyList(),
     val interestedCategories: List<String> = emptyList(),
-    val bookmarkedJobIds: List<String> = emptyList()
+    val bookmarkedJobIds: List<String> = emptyList(),
+    val profileImageUrl: String? = null // Field baru untuk foto profil
 )

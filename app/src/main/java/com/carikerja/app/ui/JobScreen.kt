@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.*
@@ -30,7 +31,8 @@ fun JobScreen(
     onBookmarkToggle: (String) -> Unit,
     onToggleFilter: () -> Unit,
     onFieldFilterSelected: (String) -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onLogout: () -> Unit
 ) {
     val fields = listOf("Semua", "Informatika", "Ekonomi", "Teknik", "Kesehatan", "Hukum", "Sosial & Politik", "Sastra & Budaya", "Pendidikan")
 
@@ -44,13 +46,16 @@ fun JobScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onBack) {
-                Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali")
+                Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Edit Profil")
             }
             Text(
                 text = if (showOnlyBookmarks) "Simpanan" else "Lowongan",
                 style = MaterialTheme.typography.headlineSmall,
                 modifier = Modifier.weight(1f)
             )
+            IconButton(onClick = onLogout) {
+                Icon(imageVector = Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Logout", tint = MaterialTheme.colorScheme.error)
+            }
             FilterChip(
                 selected = showOnlyBookmarks,
                 onClick = onToggleFilter,

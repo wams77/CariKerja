@@ -13,6 +13,7 @@ retrofit = "2.9.0"
 gson = "2.10.1"
 firebaseBom = "33.10.0"
 jsoup = "1.18.1"
+coil = "2.6.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -39,6 +40,8 @@ firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging
 firebase-auth = { group = "com.google.firebase", name = "firebase-auth" }
 play-services-auth = { group = "com.google.android.gms", name = "play-services-auth", version = "21.3.0" }
 jsoup = { group = "org.jsoup", name = "jsoup", version.ref = "jsoup" }
+firebase-storage = { group = "com.google.firebase", name = "firebase-storage" }
+coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -20,7 +20,6 @@ import com.carikerja.app.ui.LoginScreen
 import com.carikerja.app.ui.ProfileScreen
 import com.carikerja.app.ui.theme.CariKerjaTheme
 import com.google.firebase.messaging.FirebaseMessaging
-
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
@@ -63,11 +62,12 @@ class MainActivity : ComponentActivity() {
                 val isLoading by viewModel.isLoading.collectAsState()
                 val showOnlyBookmarks by viewModel.showOnlyBookmarks.collectAsState()
                 val selectedFieldFilter by viewModel.selectedFieldFilter.collectAsState()
+                val isEditing by viewModel.isEditing.collectAsState()
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     floatingActionButton = {
-                        if (currentUser != null && userProfile != null && !isLoading) {
+                        if (currentUser != null && userProfile != null && !isLoading && !isEditing) {
                             androidx.compose.material3.FloatingActionButton(onClick = { viewModel.refreshJobs() }) {
                                 androidx.compose.material3.Text("Cek Lowongan Baru", modifier = Modifier.padding(horizontal = 16.dp))
                             }
@@ -76,19 +76,23 @@ class MainActivity : ComponentActivity() {
                 ) { innerPadding ->
                     Box(modifier = Modifier.padding(innerPadding)) {
                         when {
-                            currentUser == null -> {
-                                LoginScreen()
-                            }
                             isLoading -> {
                                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                     CircularProgressIndicator()
                                 }
                             }
-                            userProfile == null -> {
-                                ProfileScreen(onSave = { 
-                                    val profileWithId = it.copy(userId = currentUser!!.uid)
-                                    viewModel.saveProfile(profileWithId) 
-                                })
+                            currentUser == null -> {
+                                LoginScreen()
+                            }
+                            userProfile == null || isEditing -> {
+                                ProfileScreen(
+                                    userProfile = userProfile,
+                                    onSave = { 
+                                        val profileWithId = it.copy(userId = currentUser!!.uid)
+                                        viewModel.saveProfile(profileWithId) 
+                                    },
+                                    onImageSelected = { viewModel.uploadProfileImage(it) }
+                                )
                             }
                             else -> {
                                 JobScreen(
@@ -99,7 +103,8 @@ class MainActivity : ComponentActivity() {
                                     onBookmarkToggle = { viewModel.toggleBookmark(it) },
                                     onToggleFilter = { viewModel.toggleShowBookmarks() },
                                     onFieldFilterSelected = { viewModel.setFieldFilter(it) },
-                                    onBack = { viewModel.editProfile() }
+                                    onBack = { viewModel.setEditing(true) },
+                                    onLogout = { viewModel.logout() }
                                 )
                             }
                         }

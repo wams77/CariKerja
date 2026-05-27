@@ -33,6 +33,9 @@ class MainViewModel : ViewModel() {
     private val _selectedFieldFilter = MutableStateFlow("Semua")
     val selectedFieldFilter: StateFlow<String> = _selectedFieldFilter
 
+    private val _isEditing = MutableStateFlow(false)
+    val isEditing: StateFlow<Boolean> = _isEditing
+
     val filteredJobs: StateFlow<List<Job>> = combine(_allJobs, _showOnlyBookmarks, _selectedFieldFilter, _userProfile) { 
         jobs, showBookmarks, fieldFilter, profile ->
         
@@ -56,7 +59,6 @@ class MainViewModel : ViewModel() {
             val user = firebaseAuth.currentUser
             _currentUser.value = user
             if (user != null) {
-                // Langsung set loading true sebelum fetch dimulai
                 _isLoading.value = true
                 fetchUserProfile(user.uid)
             } else {
@@ -87,14 +89,40 @@ class MainViewModel : ViewModel() {
         _showOnlyBookmarks.value = !_showOnlyBookmarks.value
     }
 
+    fun setEditing(editing: Boolean) {
+        _isEditing.value = editing
+    }
+
     fun editProfile() {
-        // Hanya menghapus data profil di tampilan agar user bisa input ulang
-        // Tanpa melakukan auth.signOut()
         _userProfile.value = null
     }
 
     fun logout() {
         auth.signOut()
+        _currentUser.value = null
+        _userProfile.value = null
+    }
+
+    fun uploadProfileImage(imageBytes: ByteArray) {
+        val userId = _currentUser.value?.uid ?: return
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val imageUrl = repository.uploadProfileImage(userId, imageBytes)
+                val currentProfile = _userProfile.value
+                if (currentProfile != null) {
+                    val updatedProfile = currentProfile.copy(profileImageUrl = imageUrl)
+                    repository.saveProfile(updatedProfile)
+                    _userProfile.value = updatedProfile
+                } else {
+                    // Jika profil belum ada, simpan foto ke state sementara
+                    _userProfile.value = UserProfile(userId = userId, profileImageUrl = imageUrl)
+                }
+            } catch (e: Exception) {
+                // Log error
+            }
+            _isLoading.value = false
+        }
     }
 
     fun refreshJobs() {
@@ -113,6 +141,7 @@ class MainViewModel : ViewModel() {
             repository.saveProfile(profile)
             _userProfile.value = profile
             _selectedFieldFilter.value = profile.field
+            _isEditing.value = false
             refreshJobs()
             _isLoading.value = false
         }
