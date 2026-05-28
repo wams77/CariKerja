@@ -34,26 +34,18 @@ class MainViewModel : ViewModel() {
     private val _isEditing = MutableStateFlow(false)
     val isEditing: StateFlow<Boolean> = _isEditing
 
-    val filteredJobs: StateFlow<List<Job>> = combine(_allJobs, _showOnlyBookmarks, _selectedFieldFilter, _userProfile) { 
-        jobs, showBookmarks, fieldFilter, profile ->
-        
+    val filteredJobs: StateFlow<List<Job>> = combine(_allJobs, _showOnlyBookmarks, _selectedFieldFilter, _userProfile) { jobs, showBookmarks, fieldFilter, profile ->
         var filtered = jobs
         
-        // 1. Filter Bookmark
         if (showBookmarks && profile != null) {
             filtered = filtered.filter { profile.bookmarkedJobIds.contains(it.id) }
         }
         
-        // 2. Filter Bidang (Informatika, Ekonomi, dll)
-        // Jika pilih "Semua", tampilkan SEMUA tanpa terkecuali
         if (fieldFilter != "Semua") {
             filtered = filtered.filter { 
-                it.field.contains(fieldFilter, ignoreCase = true) || 
-                it.field.contains("Umum", ignoreCase = true) ||
-                fieldFilter.contains("Umum", ignoreCase = true)
+                it.field.contains(fieldFilter, ignoreCase = true) || it.field == "Umum" 
             }
         }
-        
         filtered
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList<Job>())
 
@@ -96,10 +88,6 @@ class MainViewModel : ViewModel() {
         _isEditing.value = editing
     }
 
-    fun editProfile() {
-        _userProfile.value = null
-    }
-
     fun logout() {
         auth.signOut()
         _currentUser.value = null
@@ -112,19 +100,13 @@ class MainViewModel : ViewModel() {
             _isLoading.value = true
             try {
                 val imageUrl = repository.uploadProfileImage(userId, imageBytes)
-                // Hanya update state URL foto, jangan simpan seluruh profil dulu agar tidak pindah layar
                 val current = _userProfile.value
                 if (current != null) {
                     val updated = current.copy(profileImageUrl = imageUrl)
                     _userProfile.value = updated
                     repository.saveProfile(updated)
-                } else {
-                    // Pre-fill profile image untuk user baru
-                    _userProfile.value = UserProfile(userId = userId, profileImageUrl = imageUrl)
                 }
-            } catch (e: Exception) {
-                _isLoading.value = false
-            }
+            } catch (e: Exception) {}
             _isLoading.value = false
         }
     }
@@ -132,9 +114,7 @@ class MainViewModel : ViewModel() {
     fun refreshJobs() {
         viewModelScope.launch {
             _isLoading.value = true
-            // Ambil data terbaru dari Firebase (yang diisi oleh Bot GitHub)
-            val fbJobs = repository.getAllJobs()
-            _allJobs.value = fbJobs
+            _allJobs.value = repository.getAllJobs()
             _isLoading.value = false
         }
     }

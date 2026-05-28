@@ -20,10 +20,8 @@ data class UserProfile(
     val userId: String = "",
     val name: String = "",
     val education: String = "",
-    val field: String = "Umum", // Bidang pilihan user
+    val field: String = "Umum",
     val preferredLocation: String = "Indonesia",
-    val skills: List<String> = emptyList(),
-    val interestedCategories: List<String> = emptyList(),
-    val bookmarkedJobIds: List<String> = emptyList(),
-    val profileImageUrl: String? = null // Field baru untuk foto profil
+    val profileImageUrl: String? = null,
+    val bookmarkedJobIds: List<String> = emptyList()
 )
