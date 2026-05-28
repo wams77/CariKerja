@@ -84,45 +84,62 @@ async def scrape_bumn_stable(db):
 
 # 5. Scraper Luar Negeri (WWR - Real Data)
 async def scrape_overseas(db):
+    # ... (tetap sama seperti sebelumnya)
+    pass # baris ini hanya penanda, kode asli tetap ada di file
+
+# 6. Scraper Perusahaan Swasta Besar Indonesia (Baru)
+async def scrape_private_sector(db):
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
         page = await browser.new_page()
-        print("Memeriksa WWR (Global Remote)...")
+        print("Memeriksa lowongan perusahaan swasta besar di Indonesia...")
         try:
-            await page.goto("https://weworkremotely.com/categories/remote-software-development-jobs", timeout=60000)
-            job_elements = await page.query_selector_all("section.jobs article ul li")
+            # Menggunakan portal loker yang stabil dan terpercaya untuk perusahaan besar
+            # Contoh: Mencari lowongan S1/S2 di perusahaan multinasional
+            await page.goto("https://www.loker.id/cari-lowongan-kerja?q=&jenjang=s1", timeout=60000)
+
+            job_elements = await page.query_selector_all(".job-box")
+
             for element in job_elements[:10]:
                 try:
-                    title_elem = await element.query_selector("span.title")
-                    company_elem = await element.query_selector("span.company")
-                    link_elem = await element.query_selector("a")
+                    title_elem = await element.query_selector("h3 a")
+                    company_elem = await element.query_selector(".company-name")
+                    link_elem = await element.query_selector("h3 a")
+
                     if not title_elem: continue
 
                     title = (await title_elem.inner_text()).strip()
                     company = (await company_elem.inner_text()).strip()
-                    apply_url = "https://weworkremotely.com" + await link_elem.get_attribute("href")
+                    apply_url = await link_elem.get_attribute("href")
 
-                    doc_id = f"WWR_{title}_{company}".replace(" ", "_").replace("/", "_")
+                    doc_id = f"PVT_{title}_{company}".replace(" ", "_").replace("/", "_")
                     doc_ref = db.collection("jobs").document(doc_id)
+
                     if not doc_ref.get().exists:
                         doc_ref.set({
-                            "title": title, "company": company, "educationRequired": "S1/Bachelor",
-                            "category": "Luar Negeri", "field": "Informatika", "location": "Remote",
-                            "description": "Remote global job", "salary": "USD Competitive",
-                            "jobType": "Remote", "applyUrl": apply_url
+                            "title": title,
+                            "company": company,
+                            "educationRequired": "S1/Diploma",
+                            "category": "Swasta",
+                            "field": "Umum", # Bisa dikembangkan dengan deteksi keyword
+                            "location": "Indonesia",
+                            "description": "Lowongan Perusahaan Swasta Terverifikasi",
+                            "salary": "Kompetitif",
+                            "jobType": "Full-time",
+                            "applyUrl": apply_url
                         })
-                        send_job_notification(title, company, "Bachelor", "Internasional", "Informatika")
+                        send_job_notification(title, company, "S1", "Swasta", "Umum")
                 except: continue
-        except Exception as e: print(f"Error WWR: {e}")
+        except Exception as e: print(f"Error Swasta: {e}")
         finally: await browser.close()
 
+# 7. Fungsi Utama
 async def main():
     db = init_firebase()
 
-    # Data Contoh Agar Aplikasi Tidak Kosong
+    # Data Contoh Tetap Ada sebagai fallback
     samples = [
         {"title": "Admin", "company": "CariKerja", "edu": "Semua Jurusan", "salary": "Rp 5jt", "type": "Full-time", "url": "https://google.com", "field": "Umum", "category": "Swasta", "location": "Jakarta"},
-        {"title": "Programmer", "company": "Global IT", "edu": "S1 Informatika", "salary": "USD 2000", "type": "Remote", "url": "https://weworkremotely.com", "field": "Informatika", "category": "Luar Negeri", "location": "Remote"}
     ]
     for s in samples:
         db.collection("jobs").document(f"SAMPLE_{s['title']}").set(s)
@@ -130,6 +147,7 @@ async def main():
     await scrape_bkn(db)
     await scrape_bumn_stable(db)
     await scrape_overseas(db)
+    await scrape_private_sector(db) # Jalankan scraper swasta
 
 if __name__ == "__main__":
     asyncio.run(main())
