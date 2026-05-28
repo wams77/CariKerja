@@ -41,123 +41,116 @@ async def scrape_bkn(db):
         try:
             await page.goto("https://sscasn.bkn.go.id/", timeout=60000)
             await asyncio.sleep(5)
-
-            # Real extraction logic here (empty list if portal is closed)
-            jobs = []
-            # Logic: elements = await page.query_selector_all(".card-job") ...
-
-            for job in jobs:
-                doc_id = f"BKN_{job['title']}_{job['company']}".replace(" ", "_")
-                doc_ref = db.collection("jobs").document(doc_id)
-                if not doc_ref.get().exists:
-                    doc_ref.set({
-                        "title": job['title'], "company": job['company'],
-                        "edu": job['edu'], "category": "CPNS/PPPK",
-                        "field": job['field'], "location": "Indonesia",
-                        "description": "Formasi resmi BKN", "salary": job['salary'],
-                        "type": job['type'], "url": job['url']
-                    })
-                    send_job_notification(job['title'], job['company'], job['edu'], "CPNS", job['field'])
+            # Logika ekstraksi nyata akan diaktifkan saat portal pendaftaran dibuka
         except Exception as e: print(f"Error BKN: {e}")
         finally: await browser.close()
 
-# 4. Scraper BUMN (Stable Sources)
+# 4. Scraper BUMN (Portal Karir Stabil)
 async def scrape_bumn_stable(db):
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
         page = await browser.new_page()
-        print("Memeriksa situs BUMN (Telkom/PLN)...")
+        print("Memeriksa situs BUMN (Telkom/PLN/Pertamina)...")
         try:
-            # Scrape from Telkom Career
-            await page.goto("https://recruitment.telkom.co.id/", timeout=60000)
-            await asyncio.sleep(5)
-            jobs = [] # Data will be populated via page.query_selector
+            # Contoh pencarian BUMN di portal loker terpercaya
+            await page.goto("https://www.loker.id/cari-lowongan-kerja?q=BUMN", timeout=60000)
+            job_elements = await page.query_selector_all(".job-box")
 
-            for job in jobs:
-                doc_id = f"BUMN_STABLE_{job['title']}_{job['company']}".replace(" ", "_")
+            for element in job_elements[:5]:
+                title_elem = await element.query_selector("h3 a")
+                company_elem = await element.query_selector(".company-name")
+                if not title_elem: continue
+
+                title = (await title_elem.inner_text()).strip()
+                company = (await company_elem.inner_text()).strip()
+                url = await title_elem.get_attribute("href")
+
+                doc_id = f"BUMN_{title}_{company}".replace(" ", "_").replace("/", "_")
                 doc_ref = db.collection("jobs").document(doc_id)
                 if not doc_ref.get().exists:
-                    doc_ref.set(job)
-                    send_job_notification(job['title'], job['company'], job['edu'], "BUMN", job['field'])
-        except Exception as e: print(f"Error BUMN: {e}")
+                    doc_ref.set({
+                        "title": title, "company": company, "edu": "S1/Diploma",
+                        "category": "BUMN", "field": "Umum", "location": "Indonesia",
+                        "salary": "Kompetitif", "type": "Full-time", "url": url
+                    })
+                    send_job_notification(title, company, "S1", "BUMN", "Umum")
+        except Exception as e: print(f"Error BUMN Stable: {e}")
         finally: await browser.close()
 
-# 5. Scraper Luar Negeri (WWR - Real Data)
-async def scrape_overseas(db):
-    # ... (tetap sama seperti sebelumnya)
-    pass # baris ini hanya penanda, kode asli tetap ada di file
-
-# 6. Scraper Perusahaan Swasta Besar Indonesia (Baru)
-async def scrape_private_sector(db):
+# 5. Scraper Industri Pertambangan (IMIP, IWIP, Vale, Freeport)
+async def scrape_mining_sector(db):
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
         page = await browser.new_page()
-        print("Memeriksa lowongan perusahaan swasta besar di Indonesia...")
+        print("Memeriksa lowongan sektor Pertambangan (IMIP, Vale, Freeport, dll)...")
         try:
-            # Menggunakan portal loker yang stabil dan terpercaya untuk perusahaan besar
-            # Contoh: Mencari lowongan S1/S2 di perusahaan multinasional
-            await page.goto("https://www.loker.id/cari-lowongan-kerja?q=&jenjang=s1", timeout=60000)
+            # Mencari lowongan pertambangan di portal aggregator
+            queries = ["IMIP", "Vale", "Freeport", "Pertambangan"]
+            for query in queries:
+                await page.goto(f"https://www.loker.id/cari-lowongan-kerja?q={query}", timeout=60000)
+                job_elements = await page.query_selector_all(".job-box")
 
-            job_elements = await page.query_selector_all(".job-box")
-
-            for element in job_elements[:10]:
-                try:
+                for element in job_elements[:3]:
                     title_elem = await element.query_selector("h3 a")
                     company_elem = await element.query_selector(".company-name")
-                    link_elem = await element.query_selector("h3 a")
-
                     if not title_elem: continue
 
                     title = (await title_elem.inner_text()).strip()
                     company = (await company_elem.inner_text()).strip()
-                    apply_url = await link_elem.get_attribute("href")
+                    url = await title_elem.get_attribute("href")
 
-                    doc_id = f"PVT_{title}_{company}".replace(" ", "_").replace("/", "_")
+                    doc_id = f"MINING_{query}_{title}_{company}".replace(" ", "_").replace("/", "_")
                     doc_ref = db.collection("jobs").document(doc_id)
-
                     if not doc_ref.get().exists:
                         doc_ref.set({
-                            "title": title,
-                            "company": company,
-                            "edu": "S1/Diploma",
-                            "category": "Swasta",
-                            "field": "Umum", # Bisa dikembangkan dengan deteksi keyword
-                            "location": "Indonesia",
-                            "description": "Lowongan Perusahaan Swasta Terverifikasi",
-                            "salary": "Kompetitif",
-                            "type": "Full-time",
-                            "url": apply_url
+                            "title": title, "company": company, "edu": "S1/Teknik/SMA",
+                            "category": "Swasta", "field": "Teknik", "location": "Indonesia",
+                            "salary": "Kompetitif Pertambangan", "type": "Full-time", "url": url
                         })
-                        send_job_notification(title, company, "S1", "Swasta", "Umum")
-                except: continue
-        except Exception as e: print(f"Error Swasta: {e}")
+                        send_job_notification(title, company, "S1/Teknik", "Pertambangan", "Teknik")
+        except Exception as e: print(f"Error Mining: {e}")
+        finally: await browser.close()
+
+# 6. Scraper Luar Negeri (We Work Remotely)
+async def scrape_overseas(db):
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True)
+        page = await browser.new_page()
+        print("Memeriksa WWR (Global Remote)...")
+        try:
+            await page.goto("https://weworkremotely.com/categories/remote-software-development-jobs", timeout=60000)
+            job_elements = await page.query_selector_all("section.jobs article ul li")
+            for element in job_elements[:5]:
+                title_elem = await element.query_selector("span.title")
+                company_elem = await element.query_selector("span.company")
+                link_elem = await element.query_selector("a")
+                if not title_elem: continue
+
+                title = (await title_elem.inner_text()).strip()
+                company = (await company_elem.inner_text()).strip()
+                apply_url = "https://weworkremotely.com" + await link_elem.get_attribute("href")
+
+                doc_id = f"WWR_{title}_{company}".replace(" ", "_").replace("/", "_")
+                doc_ref = db.collection("jobs").document(doc_id)
+                if not doc_ref.get().exists:
+                    doc_ref.set({
+                        "title": title, "company": company, "edu": "Bachelor",
+                        "category": "Luar Negeri", "field": "Informatika", "location": "Remote",
+                        "description": "Remote global job", "salary": "USD Competitive",
+                        "type": "Remote", "url": apply_url
+                    })
+                    send_job_notification(title, company, "Bachelor", "Internasional", "Informatika")
+        except Exception as e: print(f"Error WWR: {e}")
         finally: await browser.close()
 
 # 7. Fungsi Utama
 async def main():
     db = init_firebase()
-
-    # PAKSA ISI DATA AWAL (AGAR TIDAK KOSONG)
-    initial_jobs = [
-        {
-            "title": "Staf Administrasi", "company": "PT Maju Bersama", "edu": "Semua Jurusan",
-            "salary": "Rp 5.000.000", "type": "Full-time", "url": "https://www.loker.id/",
-            "field": "Umum", "category": "Swasta", "location": "Jakarta"
-        },
-        {
-            "title": "IT Support", "company": "Astra International", "edu": "S1 Informatika",
-            "salary": "Kompetitif", "type": "Full-time", "url": "https://www.astra.co.id/career",
-            "field": "Informatika", "category": "Swasta", "location": "Indonesia"
-        }
-    ]
-    for job in initial_jobs:
-        doc_id = f"INIT_{job['title']}_{job['company']}".replace(" ", "_")
-        db.collection("jobs").document(doc_id).set(job)
-
+    # Hapus semua pemanggilan data dummy, hanya jalankan scraper nyata
     await scrape_bkn(db)
     await scrape_bumn_stable(db)
+    await scrape_mining_sector(db)
     await scrape_overseas(db)
-    await scrape_private_sector(db) # Jalankan scraper swasta
 
 if __name__ == "__main__":
     asyncio.run(main())
