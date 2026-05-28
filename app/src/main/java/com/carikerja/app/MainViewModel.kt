@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.carikerja.app.data.FirebaseRepository
 import com.carikerja.app.data.Job
-import com.carikerja.app.data.ScraperService
 import com.carikerja.app.data.UserProfile
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -13,7 +12,6 @@ import kotlinx.coroutines.launch
 
 class MainViewModel : ViewModel() {
     private val repository = FirebaseRepository()
-    private val scraper = ScraperService()
     private val auth = FirebaseAuth.getInstance()
 
     private val _currentUser = MutableStateFlow<FirebaseUser?>(auth.currentUser)
@@ -129,9 +127,9 @@ class MainViewModel : ViewModel() {
     fun refreshJobs() {
         viewModelScope.launch {
             _isLoading.value = true
+            // Ambil data terbaru dari Firebase (yang diisi oleh Bot GitHub)
             val fbJobs = repository.getAllJobs()
-            val webJobs = scraper.scrapeJobsFromWeb()
-            _allJobs.value = fbJobs + webJobs
+            _allJobs.value = fbJobs
             _isLoading.value = false
         }
     }
