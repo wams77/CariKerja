@@ -118,6 +118,15 @@ async def scrape_overseas(db):
 
 async def main():
     db = init_firebase()
+
+    # Data Contoh Agar Aplikasi Tidak Kosong
+    samples = [
+        {"title": "Admin", "company": "CariKerja", "edu": "Semua Jurusan", "salary": "Rp 5jt", "type": "Full-time", "url": "https://google.com", "field": "Umum", "category": "Swasta", "location": "Jakarta"},
+        {"title": "Programmer", "company": "Global IT", "edu": "S1 Informatika", "salary": "USD 2000", "type": "Remote", "url": "https://weworkremotely.com", "field": "Informatika", "category": "Luar Negeri", "location": "Remote"}
+    ]
+    for s in samples:
+        db.collection("jobs").document(f"SAMPLE_{s['title']}").set(s)
+
     await scrape_bkn(db)
     await scrape_bumn_stable(db)
     await scrape_overseas(db)

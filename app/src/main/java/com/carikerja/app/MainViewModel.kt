@@ -109,17 +109,18 @@ class MainViewModel : ViewModel() {
             _isLoading.value = true
             try {
                 val imageUrl = repository.uploadProfileImage(userId, imageBytes)
-                val currentProfile = _userProfile.value
-                if (currentProfile != null) {
-                    val updatedProfile = currentProfile.copy(profileImageUrl = imageUrl)
-                    repository.saveProfile(updatedProfile)
-                    _userProfile.value = updatedProfile
+                // Hanya update state URL foto, jangan simpan seluruh profil dulu agar tidak pindah layar
+                val current = _userProfile.value
+                if (current != null) {
+                    val updated = current.copy(profileImageUrl = imageUrl)
+                    _userProfile.value = updated
+                    repository.saveProfile(updated)
                 } else {
-                    // Jika profil belum ada, simpan foto ke state sementara
+                    // Pre-fill profile image untuk user baru
                     _userProfile.value = UserProfile(userId = userId, profileImageUrl = imageUrl)
                 }
             } catch (e: Exception) {
-                // Log error
+                _isLoading.value = false
             }
             _isLoading.value = false
         }
