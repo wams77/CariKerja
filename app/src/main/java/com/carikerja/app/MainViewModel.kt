@@ -55,7 +55,7 @@ class MainViewModel : ViewModel() {
         }
         
         filtered
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList<Job>())
 
     init {
         auth.addAuthStateListener { firebaseAuth ->

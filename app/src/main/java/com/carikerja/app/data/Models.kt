@@ -1,3 +1,5 @@
+package com.carikerja.app.data
+
 import com.google.firebase.firestore.PropertyName
 
 data class Job(

@@ -18,6 +18,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.carikerja.app.ui.JobScreen
 import com.carikerja.app.ui.LoginScreen
 import com.carikerja.app.ui.ProfileScreen
+import com.carikerja.app.data.Job
+import com.carikerja.app.data.UserProfile
 import com.carikerja.app.ui.theme.CariKerjaTheme
 import com.google.firebase.messaging.FirebaseMessaging
 import android.Manifest
