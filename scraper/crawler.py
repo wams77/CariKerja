@@ -52,10 +52,10 @@ async def scrape_bkn(db):
                 if not doc_ref.get().exists:
                     doc_ref.set({
                         "title": job['title'], "company": job['company'],
-                        "educationRequired": job['edu'], "category": "CPNS/PPPK",
+                        "edu": job['edu'], "category": "CPNS/PPPK",
                         "field": job['field'], "location": "Indonesia",
                         "description": "Formasi resmi BKN", "salary": job['salary'],
-                        "jobType": job['type'], "applyUrl": job['url']
+                        "type": job['type'], "url": job['url']
                     })
                     send_job_notification(job['title'], job['company'], job['edu'], "CPNS", job['field'])
         except Exception as e: print(f"Error BKN: {e}")
@@ -119,14 +119,14 @@ async def scrape_private_sector(db):
                         doc_ref.set({
                             "title": title,
                             "company": company,
-                            "educationRequired": "S1/Diploma",
+                            "edu": "S1/Diploma",
                             "category": "Swasta",
                             "field": "Umum", # Bisa dikembangkan dengan deteksi keyword
                             "location": "Indonesia",
                             "description": "Lowongan Perusahaan Swasta Terverifikasi",
                             "salary": "Kompetitif",
-                            "jobType": "Full-time",
-                            "applyUrl": apply_url
+                            "type": "Full-time",
+                            "url": apply_url
                         })
                         send_job_notification(title, company, "S1", "Swasta", "Umum")
                 except: continue
@@ -137,12 +137,22 @@ async def scrape_private_sector(db):
 async def main():
     db = init_firebase()
 
-    # Data Contoh Tetap Ada sebagai fallback
-    samples = [
-        {"title": "Admin", "company": "CariKerja", "edu": "Semua Jurusan", "salary": "Rp 5jt", "type": "Full-time", "url": "https://google.com", "field": "Umum", "category": "Swasta", "location": "Jakarta"},
+    # PAKSA ISI DATA AWAL (AGAR TIDAK KOSONG)
+    initial_jobs = [
+        {
+            "title": "Staf Administrasi", "company": "PT Maju Bersama", "edu": "Semua Jurusan",
+            "salary": "Rp 5.000.000", "type": "Full-time", "url": "https://www.loker.id/",
+            "field": "Umum", "category": "Swasta", "location": "Jakarta"
+        },
+        {
+            "title": "IT Support", "company": "Astra International", "edu": "S1 Informatika",
+            "salary": "Kompetitif", "type": "Full-time", "url": "https://www.astra.co.id/career",
+            "field": "Informatika", "category": "Swasta", "location": "Indonesia"
+        }
     ]
-    for s in samples:
-        db.collection("jobs").document(f"SAMPLE_{s['title']}").set(s)
+    for job in initial_jobs:
+        doc_id = f"INIT_{job['title']}_{job['company']}".replace(" ", "_")
+        db.collection("jobs").document(doc_id).set(job)
 
     await scrape_bkn(db)
     await scrape_bumn_stable(db)

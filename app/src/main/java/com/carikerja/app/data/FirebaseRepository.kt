@@ -34,10 +34,11 @@ class FirebaseRepository {
     }
 
     suspend fun getAllJobs(): List<Job> {
-        return db.collection("jobs")
-            .get()
-            .await()
-            .toObjects(Job::class.java)
+        val snapshot = db.collection("jobs").get().await()
+        return snapshot.documents.mapNotNull { doc ->
+            val job = doc.toObject(Job::class.java)
+            job?.copy(id = doc.id) // Mengambil ID dari nama dokumen Firebase
+        }
     }
 
     suspend fun toggleBookmark(userId: String, jobId: String) {

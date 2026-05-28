@@ -39,13 +39,18 @@ class MainViewModel : ViewModel() {
         
         var filtered = jobs
         
+        // 1. Filter Bookmark
         if (showBookmarks && profile != null) {
             filtered = filtered.filter { profile.bookmarkedJobIds.contains(it.id) }
         }
         
+        // 2. Filter Bidang (Informatika, Ekonomi, dll)
+        // Jika pilih "Semua", tampilkan SEMUA tanpa terkecuali
         if (fieldFilter != "Semua") {
             filtered = filtered.filter { 
-                it.field.contains(fieldFilter, ignoreCase = true) || it.field == "Umum" 
+                it.field.contains(fieldFilter, ignoreCase = true) || 
+                it.field.contains("Umum", ignoreCase = true) ||
+                fieldFilter.contains("Umum", ignoreCase = true)
             }
         }
         

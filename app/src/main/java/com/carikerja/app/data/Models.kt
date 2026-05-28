@@ -1,17 +1,17 @@
-package com.carikerja.app.data
+import com.google.firebase.firestore.PropertyName
 
 data class Job(
     val id: String = "",
     val title: String = "",
     val company: String = "",
     val location: String = "",
-    val category: String = "", // BUMN, CPNS, Luar Negeri, dsb
-    val field: String = "Umum", // Bidang: Informatika, Ekonomi, Teknik, Umum
-    val educationRequired: String = "",
+    val category: String = "",
+    val field: String = "Umum",
+    @get:PropertyName("edu") @set:PropertyName("edu") var educationRequired: String = "",
     val description: String = "",
     val salary: String = "Tersedia",
-    val jobType: String = "Full-time",
-    val applyUrl: String = ""
+    @get:PropertyName("type") @set:PropertyName("type") var jobType: String = "Full-time",
+    @get:PropertyName("url") @set:PropertyName("url") var applyUrl: String = ""
 )
 
 data class UserProfile(
