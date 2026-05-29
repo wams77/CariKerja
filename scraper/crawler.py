@@ -32,82 +32,122 @@ def send_job_notification(title, company, edu, category, field):
     except Exception as e:
         print(f"Error sending notification: {e}")
 
-# 3. Scraper Loker.id (BUMN & Swasta)
-async def scrape_loker_id(db, query, category):
+# 3. Scraper Jobstreet (Indonesia)
+async def scrape_jobstreet(db, query, category):
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
-        context = await browser.new_context(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+        context = await browser.new_context(
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+        )
         page = await context.new_page()
-        print(f"Memeriksa loker.id untuk {query}...")
+        print(f"Memeriksa Jobstreet untuk {query}...")
         try:
-            url = f"https://www.loker.id/cari-lowongan-kerja?q={query}"
-            await page.goto(url, timeout=60000, wait_until="domcontentloaded")
-            await page.wait_for_timeout(3000)
+            url = f"https://www.jobstreet.co.id/id/job-search/{query.lower()}-jobs/"
+            await page.goto(url, timeout=60000)
+            await page.wait_for_timeout(5000)
 
-            # Cari elemen artikel lowongan
-            job_cards = await page.query_selector_all("div.job-post, div.job-box, div.card")
-            print(f"Ditemukan {len(job_cards)} box di loker.id untuk {query}")
+            # Jobstreet menggunakan data-automation attributes
+            job_cards = await page.query_selector_all("article[data-automation='job-card'], article")
+            print(f"Ditemukan {len(job_cards)} lowongan di Jobstreet untuk {query}")
 
             count = 0
             for card in job_cards:
                 if count >= 5: break
 
-                title_elem = await card.query_selector("h3 a, h2 a")
+                title_elem = await card.query_selector("a[data-automation='jobTitle']")
+                company_elem = await card.query_selector("a[data-automation='jobCompany'], span[data-automation='jobCompany']")
+                location_elem = await card.query_selector("a[data-automation='jobLocation'], span[data-automation='jobLocation']")
+
                 if not title_elem: continue
 
                 title = (await title_elem.inner_text()).strip()
-                link = await title_elem.get_attribute("href")
-                if not link.startswith("http"): link = "https://www.loker.id" + link
+                company = (await company_elem.inner_text()).strip() if company_elem else "Perusahaan Terdaftar"
+                location = (await location_elem.inner_text()).strip() if location_elem else "Indonesia"
+                url = "https://www.jobstreet.co.id" + await title_elem.get_attribute("href")
 
-                company = "Perusahaan"
-                company_elem = await card.query_selector(".company-name, .job-company, span.text-muted")
-                if company_elem:
-                    company = (await company_elem.inner_text()).strip()
-
-                doc_id = f"LOKERID_{query}_{title}_{company}".replace(" ", "_").replace("/", "_")
+                doc_id = f"JOBSTREET_{title}_{company}".replace(" ", "_").replace("/", "_")[:100]
                 db.collection("jobs").document(doc_id).set({
-                    "title": title, "company": company, "edu": "SMA/Diploma/S1",
-                    "category": category, "field": "Umum", "location": "Indonesia",
-                    "salary": "Kompetitif", "type": "Full-time", "url": link
+                    "title": title, "company": company, "edu": "Diploma/S1",
+                    "category": category, "field": "Umum", "location": location,
+                    "salary": "Kompetitif", "type": "Full-time", "url": url
                 })
-                print(f"Berhasil simpan: {title} ({company})")
+                print(f"Berhasil simpan (Jobstreet): {title}")
                 count += 1
-        except Exception as e: print(f"Error loker.id ({query}): {e}")
+        except Exception as e: print(f"Error Jobstreet ({query}): {e}")
         finally: await browser.close()
 
-# 4. Scraper Sribulance (Freelance/Remote)
-async def scrape_sribulance(db):
+# 4. Scraper Karir.com
+async def scrape_karir_com(db, query, category):
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
         page = await browser.new_page()
-        print("Memeriksa Sribulance...")
+        print(f"Memeriksa Karir.com untuk {query}...")
         try:
-            await page.goto("https://www.sribulance.com/id/jobs", timeout=60000)
-            await page.wait_for_selector(".job-list-item, .job-item", timeout=10000)
+            url = f"https://www.karir.com/search?q={query}"
+            await page.goto(url, timeout=60000)
+            await page.wait_for_timeout(5000)
 
-            items = await page.query_selector_all(".job-list-item, .job-item")
-            print(f"Ditemukan {len(items)} lowongan di Sribulance")
+            job_cards = await page.query_selector_all(".job-card, article")
+            print(f"Ditemukan {len(job_cards)} lowongan di Karir.com untuk {query}")
 
-            for item in items[:5]:
-                title_elem = await item.query_selector("h3, .title")
-                link_elem = await item.query_selector("a")
-                if not title_elem or not link_elem: continue
+            count = 0
+            for card in job_cards:
+                if count >= 5: break
+
+                title_elem = await card.query_selector(".job-title a, h4 a")
+                company_elem = await card.query_selector(".company-name, .job-company")
+                if not title_elem: continue
 
                 title = (await title_elem.inner_text()).strip()
-                url = await link_elem.get_attribute("href")
-                if not url.startswith("http"): url = "https://www.sribulance.com" + url
+                company = (await company_elem.inner_text()).strip() if company_elem else "Perusahaan"
+                url = await title_elem.get_attribute("href")
+                if not url.startswith("http"): url = "https://www.karir.com" + url
 
-                doc_id = f"SRIBU_{title}".replace(" ", "_").replace("/", "_")
+                doc_id = f"KARIR_{title}_{company}".replace(" ", "_").replace("/", "_")[:100]
                 db.collection("jobs").document(doc_id).set({
-                    "title": title, "company": "Client Sribulance", "edu": "Skill-based",
-                    "category": "Freelance", "field": "Umum", "location": "Remote",
-                    "salary": "Negotiable", "type": "Project", "url": url
+                    "title": title, "company": company, "edu": "S1/Diploma",
+                    "category": category, "field": "Umum", "location": "Indonesia",
+                    "salary": "Kompetitif", "type": "Full-time", "url": url
                 })
-                print(f"Berhasil simpan: {title} (Sribulance)")
-        except Exception as e: print(f"Error Sribulance: {e}")
+                print(f"Berhasil simpan (Karir.com): {title}")
+                count += 1
+        except Exception as e: print(f"Error Karir.com: {e}")
         finally: await browser.close()
 
-# 5. Scraper WWR (Global Remote)
+# 5. Scraper Sribu (Freelance)
+async def scrape_sribu(db):
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True)
+        page = await browser.new_page()
+        print("Memeriksa Sribu (Freelance)...")
+        try:
+            await page.goto("https://www.sribu.com/id/jobs", timeout=60000)
+            await page.wait_for_timeout(5000)
+
+            links = await page.query_selector_all("a[href*='/id/jobs/']")
+            print(f"Ditemukan {len(links)} link di Sribu")
+
+            count = 0
+            for link in links:
+                if count >= 10: break
+                title = (await link.inner_text()).strip()
+                url = await link.get_attribute("href")
+                if not url.startswith("http"): url = "https://www.sribu.com" + url
+
+                if len(title) < 5 or "Lihat" in title: continue
+
+                doc_id = f"SRIBU_{title}".replace(" ", "_").replace("/", "_")[:100]
+                db.collection("jobs").document(doc_id).set({
+                    "title": title, "company": "Client Sribu", "edu": "Skill-based",
+                    "category": "Freelance", "field": "Umum", "location": "Remote",
+                    "salary": "Project-based", "type": "Project", "url": url
+                })
+                print(f"Berhasil simpan (Sribu): {title}")
+                count += 1
+        except Exception as e: print(f"Error Sribu: {e}")
+        finally: await browser.close()
+
+# 6. Scraper WWR (Luar Negeri)
 async def scrape_wwr(db):
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
@@ -115,36 +155,37 @@ async def scrape_wwr(db):
         print("Memeriksa Weworkremotely...")
         try:
             await page.goto("https://weworkremotely.com/categories/remote-software-development-jobs", timeout=60000)
+            await page.wait_for_timeout(3000)
 
-            # Ambil link-link lowongan
-            links = await page.query_selector_all("section.jobs li a[href^='/remote-jobs/']")
-            print(f"Ditemukan {len(links)} link di WWR")
+            items = await page.query_selector_all("section.jobs li")
+            print(f"Ditemukan {len(items)} item di WWR")
 
             count = 0
-            for link in links:
+            for item in items:
                 if count >= 10: break
+                link_elem = await item.query_selector("a[href^='/remote-jobs/']")
+                if not link_elem: continue
 
-                title_span = await link.query_selector("span.title")
-                company_span = await link.query_selector("span.company")
+                title_elem = await link_elem.query_selector(".title")
+                company_elem = await link_elem.query_selector(".company")
+                if not title_elem: continue
 
-                if not title_span: continue
+                title = (await title_elem.inner_text()).strip()
+                company = (await company_elem.inner_text()).strip() if company_elem else "Remote Co"
+                url = "https://weworkremotely.com" + await link_elem.get_attribute("href")
 
-                title = (await title_span.inner_text()).strip()
-                company = (await company_span.inner_text()).strip() if company_span else "Remote Co"
-                url = "https://weworkremotely.com" + await link.get_attribute("href")
-
-                doc_id = f"WWR_{title}_{company}".replace(" ", "_").replace("/", "_")
+                doc_id = f"WWR_{title}_{company}".replace(" ", "_").replace("/", "_")[:100]
                 db.collection("jobs").document(doc_id).set({
                     "title": title, "company": company, "edu": "Bachelor",
                     "category": "Luar Negeri", "field": "Informatika", "location": "Remote",
                     "salary": "USD Competitive", "type": "Remote", "url": url
                 })
-                print(f"Berhasil simpan: {title} (WWR)")
+                print(f"Berhasil simpan (WWR): {title}")
                 count += 1
         except Exception as e: print(f"Error WWR: {e}")
         finally: await browser.close()
 
-# 6. Fungsi Utama
+# 7. Fungsi Utama
 async def main():
     print("Memulai scraper...")
     db = init_firebase()
@@ -156,13 +197,13 @@ async def main():
     })
     print("Koneksi Firestore berhasil!")
 
-    # Jalankan semua scraper
-    await asyncio.gather(
-        scrape_loker_id(db, "BUMN", "BUMN"),
-        scrape_loker_id(db, "Pertambangan", "Swasta"),
-        scrape_sribulance(db),
-        scrape_wwr(db)
-    )
+    # Jalankan scraper secara bertahap
+    await scrape_jobstreet(db, "BUMN", "BUMN")
+    await scrape_jobstreet(db, "Swasta", "Swasta")
+    await scrape_karir_com(db, "BUMN", "BUMN")
+    await scrape_karir_com(db, "Swasta", "Swasta")
+    await scrape_sribu(db)
+    await scrape_wwr(db)
 
     print("Scraper selesai.")
 
