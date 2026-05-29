@@ -50,66 +50,63 @@ async def scrape_bumn_stable(db):
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
         page = await browser.new_page()
-        print("Memeriksa situs BUMN (Telkom/PLN/Pertamina)...")
+        print("Memeriksa portal loker untuk BUMN...")
         try:
-            # Contoh pencarian BUMN di portal loker terpercaya
             await page.goto("https://www.loker.id/cari-lowongan-kerja?q=BUMN", timeout=60000)
-            job_elements = await page.query_selector_all(".job-box")
+            # Menggunakan selektor yang lebih umum
+            job_elements = await page.query_selector_all("div.job-post, .job-box, .job-card")
             print(f"Ditemukan {len(job_elements)} potensi lowongan BUMN.")
 
             for element in job_elements[:5]:
-                title_elem = await element.query_selector("h3 a")
-                company_elem = await element.query_selector(".company-name")
+                title_elem = await element.query_selector("h3 a, h2 a")
+                company_elem = await element.query_selector(".company-name, .job-company")
                 if not title_elem: continue
 
                 title = (await title_elem.inner_text()).strip()
-                company = (await company_elem.inner_text()).strip()
+                company = (await company_elem.inner_text()).strip() if company_elem else "BUMN Terkait"
                 url = await title_elem.get_attribute("href")
 
                 doc_id = f"BUMN_{title}_{company}".replace(" ", "_").replace("/", "_")
-                doc_ref = db.collection("jobs").document(doc_id)
-                if not doc_ref.get().exists:
-                    doc_ref.set({
-                        "title": title, "company": company, "edu": "S1/Diploma",
-                        "category": "BUMN", "field": "Umum", "location": "Indonesia",
-                        "salary": "Kompetitif", "type": "Full-time", "url": url
-                    })
-                    send_job_notification(title, company, "S1", "BUMN", "Umum")
+                db.collection("jobs").document(doc_id).set({
+                    "title": title, "company": company, "edu": "S1/Diploma",
+                    "category": "BUMN", "field": "Umum", "location": "Indonesia",
+                    "salary": "Kompetitif", "type": "Full-time", "url": url
+                })
+                print(f"Berhasil simpan: {title} ke Firestore")
+                send_job_notification(title, company, "S1", "BUMN", "Umum")
         except Exception as e: print(f"Error BUMN Stable: {e}")
         finally: await browser.close()
 
-# 5. Scraper Industri Pertambangan (IMIP, IWIP, Vale, Freeport)
+# 5. Scraper Industri Pertambangan
 async def scrape_mining_sector(db):
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
         page = await browser.new_page()
-        print("Memeriksa lowongan sektor Pertambangan (IMIP, Vale, Freeport, dll)...")
+        print("Memeriksa lowongan sektor Pertambangan...")
         try:
-            # Mencari lowongan pertambangan di portal aggregator
             queries = ["IMIP", "Vale", "Freeport", "Pertambangan"]
             for query in queries:
                 await page.goto(f"https://www.loker.id/cari-lowongan-kerja?q={query}", timeout=60000)
-                job_elements = await page.query_selector_all(".job-box")
+                job_elements = await page.query_selector_all("div.job-post, .job-box, .job-card")
                 print(f"Ditemukan {len(job_elements)} potensi lowongan {query}.")
 
                 for element in job_elements[:3]:
-                    title_elem = await element.query_selector("h3 a")
-                    company_elem = await element.query_selector(".company-name")
+                    title_elem = await element.query_selector("h3 a, h2 a")
+                    company_elem = await element.query_selector(".company-name, .job-company")
                     if not title_elem: continue
 
                     title = (await title_elem.inner_text()).strip()
-                    company = (await company_elem.inner_text()).strip()
+                    company = (await company_elem.inner_text()).strip() if company_elem else "Perusahaan Tambang"
                     url = await title_elem.get_attribute("href")
 
                     doc_id = f"MINING_{query}_{title}_{company}".replace(" ", "_").replace("/", "_")
-                    doc_ref = db.collection("jobs").document(doc_id)
-                    if not doc_ref.get().exists:
-                        doc_ref.set({
-                            "title": title, "company": company, "edu": "S1/Teknik/SMA",
-                            "category": "Swasta", "field": "Teknik", "location": "Indonesia",
-                            "salary": "Kompetitif Pertambangan", "type": "Full-time", "url": url
-                        })
-                        send_job_notification(title, company, "S1/Teknik", "Pertambangan", "Teknik")
+                    db.collection("jobs").document(doc_id).set({
+                        "title": title, "company": company, "edu": "S1/Teknik/SMA",
+                        "category": "Swasta", "field": "Teknik", "location": "Indonesia",
+                        "salary": "Kompetitif Pertambangan", "type": "Full-time", "url": url
+                    })
+                    print(f"Berhasil simpan: {title} ({query}) ke Firestore")
+                    send_job_notification(title, company, "S1/Teknik", "Pertambangan", "Teknik")
         except Exception as e: print(f"Error Mining: {e}")
         finally: await browser.close()
 
@@ -121,28 +118,32 @@ async def scrape_overseas(db):
         print("Memeriksa WWR (Global Remote)...")
         try:
             await page.goto("https://weworkremotely.com/categories/remote-software-development-jobs", timeout=60000)
-            job_elements = await page.query_selector_all("section.jobs article ul li")
+            job_elements = await page.query_selector_all("li.feature, li")
             print(f"Ditemukan {len(job_elements)} potensi lowongan luar negeri.")
-            for element in job_elements[:5]:
-                title_elem = await element.query_selector("span.title")
-                company_elem = await element.query_selector("span.company")
-                link_elem = await element.query_selector("a")
-                if not title_elem: continue
+
+            count = 0
+            for element in job_elements:
+                if count >= 10: break
+
+                title_elem = await element.query_selector(".title")
+                company_elem = await element.query_selector(".company")
+                link_elem = await element.query_selector("a[href^='/remote-jobs/']")
+
+                if not title_elem or not link_elem: continue
 
                 title = (await title_elem.inner_text()).strip()
-                company = (await company_elem.inner_text()).strip()
+                company = (await company_elem.inner_text()).strip() if company_elem else "Remote Company"
                 apply_url = "https://weworkremotely.com" + await link_elem.get_attribute("href")
 
                 doc_id = f"WWR_{title}_{company}".replace(" ", "_").replace("/", "_")
-                doc_ref = db.collection("jobs").document(doc_id)
-                if not doc_ref.get().exists:
-                    doc_ref.set({
-                        "title": title, "company": company, "edu": "Bachelor",
-                        "category": "Luar Negeri", "field": "Informatika", "location": "Remote",
-                        "description": "Remote global job", "salary": "USD Competitive",
-                        "type": "Remote", "url": apply_url
-                    })
-                    send_job_notification(title, company, "Bachelor", "Internasional", "Informatika")
+                db.collection("jobs").document(doc_id).set({
+                    "title": title, "company": company, "edu": "Bachelor",
+                    "category": "Luar Negeri", "field": "Informatika", "location": "Remote",
+                    "description": "Remote global job", "salary": "USD Competitive",
+                    "type": "Remote", "url": apply_url
+                })
+                print(f"Berhasil simpan: {title} (WWR) ke Firestore")
+                count += 1
         except Exception as e: print(f"Error WWR: {e}")
         finally: await browser.close()
 
@@ -162,7 +163,6 @@ async def main():
         print(f"Koneksi Firestore GAGAL: {e}")
         return
 
-    # Hapus semua pemanggilan data dummy, hanya jalankan scraper nyata
     await scrape_bkn(db)
     await scrape_bumn_stable(db)
     await scrape_mining_sector(db)
