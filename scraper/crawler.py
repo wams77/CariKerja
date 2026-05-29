@@ -55,6 +55,7 @@ async def scrape_bumn_stable(db):
             # Contoh pencarian BUMN di portal loker terpercaya
             await page.goto("https://www.loker.id/cari-lowongan-kerja?q=BUMN", timeout=60000)
             job_elements = await page.query_selector_all(".job-box")
+            print(f"Ditemukan {len(job_elements)} potensi lowongan BUMN.")
 
             for element in job_elements[:5]:
                 title_elem = await element.query_selector("h3 a")
@@ -89,6 +90,7 @@ async def scrape_mining_sector(db):
             for query in queries:
                 await page.goto(f"https://www.loker.id/cari-lowongan-kerja?q={query}", timeout=60000)
                 job_elements = await page.query_selector_all(".job-box")
+                print(f"Ditemukan {len(job_elements)} potensi lowongan {query}.")
 
                 for element in job_elements[:3]:
                     title_elem = await element.query_selector("h3 a")
@@ -120,6 +122,7 @@ async def scrape_overseas(db):
         try:
             await page.goto("https://weworkremotely.com/categories/remote-software-development-jobs", timeout=60000)
             job_elements = await page.query_selector_all("section.jobs article ul li")
+            print(f"Ditemukan {len(job_elements)} potensi lowongan luar negeri.")
             for element in job_elements[:5]:
                 title_elem = await element.query_selector("span.title")
                 company_elem = await element.query_selector("span.company")
@@ -145,12 +148,26 @@ async def scrape_overseas(db):
 
 # 7. Fungsi Utama
 async def main():
+    print("Memulai scraper...")
     db = init_firebase()
+
+    # Tes koneksi: Pastikan kita bisa menulis ke Firestore
+    try:
+        db.collection("system_logs").document("last_run").set({
+            "timestamp": firestore.SERVER_TIMESTAMP,
+            "status": "running"
+        })
+        print("Koneksi Firestore berhasil!")
+    except Exception as e:
+        print(f"Koneksi Firestore GAGAL: {e}")
+        return
+
     # Hapus semua pemanggilan data dummy, hanya jalankan scraper nyata
     await scrape_bkn(db)
     await scrape_bumn_stable(db)
     await scrape_mining_sector(db)
     await scrape_overseas(db)
+    print("Scraper selesai.")
 
 if __name__ == "__main__":
     asyncio.run(main())
