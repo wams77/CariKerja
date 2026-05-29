@@ -1,19 +1,17 @@
 package com.carikerja.app.data
 
-import com.google.firebase.firestore.PropertyName
-
 data class Job(
-    val id: String = "",
-    val title: String = "",
-    val company: String = "",
-    val location: String = "",
-    val category: String = "",
-    val field: String = "Umum",
-    @get:PropertyName("edu") @set:PropertyName("edu") var educationRequired: String = "",
-    val description: String = "",
-    val salary: String = "Tersedia",
-    @get:PropertyName("type") @set:PropertyName("type") var jobType: String = "Full-time",
-    @get:PropertyName("url") @set:PropertyName("url") var applyUrl: String = ""
+    var id: String = "",
+    var title: String = "",
+    var company: String = "",
+    var location: String = "",
+    var category: String = "",
+    var field: String = "Umum",
+    var edu: String = "",       // Sesuaikan dengan Firestore
+    var description: String = "",
+    var salary: String = "Tersedia",
+    var type: String = "Full-time", // Sesuaikan dengan Firestore
+    var url: String = ""        // Sesuaikan dengan Firestore
 )
 
 data class UserProfile(

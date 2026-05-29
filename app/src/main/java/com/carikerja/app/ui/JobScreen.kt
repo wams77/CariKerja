@@ -157,7 +157,7 @@ fun JobItem(job: Job, isBookmarked: Boolean, onBookmarkClick: () -> Unit) {
                     color = MaterialTheme.colorScheme.tertiaryContainer
                 ) {
                     Text(
-                        text = job.jobType,
+                        text = job.type,
                         style = MaterialTheme.typography.labelSmall,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                     )
@@ -173,7 +173,7 @@ fun JobItem(job: Job, isBookmarked: Boolean, onBookmarkClick: () -> Unit) {
             }
 
             Text(
-                text = "🎓 Syarat: ${job.educationRequired}",
+                text = "🎓 Syarat: ${job.edu}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(vertical = 4.dp)
@@ -183,13 +183,13 @@ fun JobItem(job: Job, isBookmarked: Boolean, onBookmarkClick: () -> Unit) {
             
             Button(
                 onClick = {
-                    if (job.applyUrl.isNotEmpty()) {
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(job.applyUrl))
+                    if (job.url.isNotEmpty()) {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(job.url))
                         context.startActivity(intent)
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = job.applyUrl.isNotEmpty()
+                enabled = job.url.isNotEmpty()
             ) {
                 Text("Daftar Sekarang")
             }

@@ -27,9 +27,9 @@ class FirebaseRepository {
         val allJobs = getAllJobs()
         // Filter cerdas: Ambil yang cocok dengan jurusan ATAU yang untuk semua jurusan
         return allJobs.filter { 
-            it.educationRequired.contains(education, ignoreCase = true) || 
-            it.educationRequired.contains("Semua Jurusan", ignoreCase = true) ||
-            it.educationRequired == "Semua Jenjang"
+            it.edu.contains(education, ignoreCase = true) || 
+            it.edu.contains("Semua Jurusan", ignoreCase = true) ||
+            it.edu == "Semua Jenjang"
         }
     }
 
